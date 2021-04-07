@@ -7,9 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		121F1C30261C52270004DB58 /* TYImageAESCoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 121F1C2F261C52260004DB58 /* TYImageAESCoder.m */; };
+		121F1C36261C57A30004DB58 /* TYAVSDataUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 121F1C35261C57A30004DB58 /* TYAVSDataUtil.m */; };
+		121F1C5F261D8BFC0004DB58 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 121F1C57261D8BFB0004DB58 /* LICENSE */; };
+		121F1C60261D8BFC0004DB58 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 121F1C58261D8BFB0004DB58 /* README.md */; };
+		121F1C61261D8BFC0004DB58 /* NSObject+YYModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 121F1C5C261D8BFB0004DB58 /* NSObject+YYModel.m */; };
+		121F1C62261D8BFC0004DB58 /* YYClassInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 121F1C5D261D8BFB0004DB58 /* YYClassInfo.m */; };
+		124C27862613134200159276 /* TYAVSUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 124C27852613134200159276 /* TYAVSUploader.m */; };
+		124C27892613158700159276 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 124C27882613158700159276 /* AudioToolbox.framework */; };
 		125354C52609DC16006EDE29 /* AudioManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 125354C42609DC16006EDE29 /* AudioManager.m */; };
 		125354C92609DC3E006EDE29 /* AlexaClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 125354C82609DC3E006EDE29 /* AlexaClient.m */; };
 		129359712609E358007508DC /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 129359702609E358007508DC /* AVFoundation.framework */; };
+		129359752609E883007508DC /* RecordTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 129359742609E882007508DC /* RecordTool.m */; };
 		456673911BC47B3E004EEC3E /* SafariServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 456673901BC47B3E004EEC3E /* SafariServices.framework */; };
 		45C8A9D81DB18D1900DE248C /* LoginWithAmazon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45C8A9D71DB18D1900DE248C /* LoginWithAmazon.framework */; };
 		45CC54691BC7106600F679D6 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 45CC54671BC6FA7500F679D6 /* CoreGraphics.framework */; };
@@ -36,11 +45,27 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		121F1C2F261C52260004DB58 /* TYImageAESCoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TYImageAESCoder.m; sourceTree = "<group>"; };
+		121F1C32261C522D0004DB58 /* TYImageAESCoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TYImageAESCoder.h; sourceTree = "<group>"; };
+		121F1C34261C57A30004DB58 /* TYAVSDataUtil.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TYAVSDataUtil.h; sourceTree = "<group>"; };
+		121F1C35261C57A30004DB58 /* TYAVSDataUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TYAVSDataUtil.m; sourceTree = "<group>"; };
+		121F1C57261D8BFB0004DB58 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		121F1C58261D8BFB0004DB58 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		121F1C5A261D8BFB0004DB58 /* YYClassInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YYClassInfo.h; sourceTree = "<group>"; };
+		121F1C5B261D8BFB0004DB58 /* YYModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YYModel.h; sourceTree = "<group>"; };
+		121F1C5C261D8BFB0004DB58 /* NSObject+YYModel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+YYModel.m"; sourceTree = "<group>"; };
+		121F1C5D261D8BFB0004DB58 /* YYClassInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = YYClassInfo.m; sourceTree = "<group>"; };
+		121F1C5E261D8BFB0004DB58 /* NSObject+YYModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+YYModel.h"; sourceTree = "<group>"; };
+		124C27842613134200159276 /* TYAVSUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TYAVSUploader.h; sourceTree = "<group>"; };
+		124C27852613134200159276 /* TYAVSUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TYAVSUploader.m; sourceTree = "<group>"; };
+		124C27882613158700159276 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		125354C32609DC16006EDE29 /* AudioManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = AudioManager.h; sourceTree = "<group>"; };
 		125354C42609DC16006EDE29 /* AudioManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = AudioManager.m; sourceTree = "<group>"; };
 		125354C72609DC3E006EDE29 /* AlexaClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AlexaClient.h; sourceTree = "<group>"; };
 		125354C82609DC3E006EDE29 /* AlexaClient.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AlexaClient.m; sourceTree = "<group>"; };
 		129359702609E358007508DC /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		129359732609E882007508DC /* RecordTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecordTool.h; sourceTree = "<group>"; };
+		129359742609E882007508DC /* RecordTool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RecordTool.m; sourceTree = "<group>"; };
 		456673901BC47B3E004EEC3E /* SafariServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SafariServices.framework; path = System/Library/Frameworks/SafariServices.framework; sourceTree = SDKROOT; };
 		45C8A9D71DB18D1900DE248C /* LoginWithAmazon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = LoginWithAmazon.framework; path = ../Library/LoginWithAmazon.framework; sourceTree = "<group>"; };
 		45C8A9D91DB18D4200DE248C /* LoginWithAmazonSample.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = LoginWithAmazonSample.entitlements; sourceTree = "<group>"; };
@@ -77,6 +102,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				124C27892613158700159276 /* AudioToolbox.framework in Frameworks */,
 				129359712609E358007508DC /* AVFoundation.framework in Frameworks */,
 				45CC54691BC7106600F679D6 /* CoreGraphics.framework in Frameworks */,
 				456673911BC47B3E004EEC3E /* SafariServices.framework in Frameworks */,
@@ -90,6 +116,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		121F1C56261D8BFB0004DB58 /* YYModel */ = {
+			isa = PBXGroup;
+			children = (
+				121F1C57261D8BFB0004DB58 /* LICENSE */,
+				121F1C58261D8BFB0004DB58 /* README.md */,
+				121F1C59261D8BFB0004DB58 /* YYModel */,
+			);
+			path = YYModel;
+			sourceTree = "<group>";
+		};
+		121F1C59261D8BFB0004DB58 /* YYModel */ = {
+			isa = PBXGroup;
+			children = (
+				121F1C5A261D8BFB0004DB58 /* YYClassInfo.h */,
+				121F1C5B261D8BFB0004DB58 /* YYModel.h */,
+				121F1C5C261D8BFB0004DB58 /* NSObject+YYModel.m */,
+				121F1C5D261D8BFB0004DB58 /* YYClassInfo.m */,
+				121F1C5E261D8BFB0004DB58 /* NSObject+YYModel.h */,
+			);
+			path = YYModel;
+			sourceTree = "<group>";
+		};
 		936DE01416DF69B400D586D0 = {
 			isa = PBXGroup;
 			children = (
@@ -110,6 +158,7 @@
 		936DE02216DF69B400D586D0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				124C27882613158700159276 /* AudioToolbox.framework */,
 				129359702609E358007508DC /* AVFoundation.framework */,
 				45C8A9D71DB18D1900DE248C /* LoginWithAmazon.framework */,
 				45CC54671BC6FA7500F679D6 /* CoreGraphics.framework */,
@@ -124,15 +173,24 @@
 		936DE02916DF69B400D586D0 /* LoginWithAmazonSample */ = {
 			isa = PBXGroup;
 			children = (
+				121F1C56261D8BFB0004DB58 /* YYModel */,
 				45C8A9D91DB18D4200DE248C /* LoginWithAmazonSample.entitlements */,
 				9322F180170C363A00211AFE /* NOTICE.txt */,
 				9322F17E170C341E00211AFE /* LICENSE.txt */,
 				936DE03216DF69B400D586D0 /* AMZNAppDelegate.h */,
 				936DE03316DF69B400D586D0 /* AMZNAppDelegate.m */,
+				121F1C2F261C52260004DB58 /* TYImageAESCoder.m */,
 				125354C32609DC16006EDE29 /* AudioManager.h */,
 				125354C42609DC16006EDE29 /* AudioManager.m */,
+				121F1C32261C522D0004DB58 /* TYImageAESCoder.h */,
+				129359732609E882007508DC /* RecordTool.h */,
+				129359742609E882007508DC /* RecordTool.m */,
 				125354C72609DC3E006EDE29 /* AlexaClient.h */,
 				125354C82609DC3E006EDE29 /* AlexaClient.m */,
+				124C27842613134200159276 /* TYAVSUploader.h */,
+				124C27852613134200159276 /* TYAVSUploader.m */,
+				121F1C34261C57A30004DB58 /* TYAVSDataUtil.h */,
+				121F1C35261C57A30004DB58 /* TYAVSDataUtil.m */,
 				93E3471017181CA800A9F478 /* AMZNLoginController.h */,
 				93E3471117181CA800A9F478 /* AMZNLoginController.m */,
 				936DE03516DF69B400D586D0 /* MainStoryboard_iPhone.storyboard */,
@@ -231,9 +289,11 @@
 				9322F17F170C341E00211AFE /* LICENSE.txt in Resources */,
 				9322F181170C363A00211AFE /* NOTICE.txt in Resources */,
 				936C7CC51725234D0067524F /* Default-568h@2x.png in Resources */,
+				121F1C60261D8BFC0004DB58 /* README.md in Resources */,
 				936C7D4A17268E0F0067524F /* btnLWA_gold_157x36_pressed.png in Resources */,
 				936C7D4B17268E0F0067524F /* btnLWA_gold_157x36.png in Resources */,
 				936C7D4C17268E0F0067524F /* btnLWA_gold_314x72_pressed.png in Resources */,
+				121F1C5F261D8BFC0004DB58 /* LICENSE in Resources */,
 				936C7D4D17268E0F0067524F /* btnLWA_gold_314x72.png in Resources */,
 				936C7D5F172691600067524F /* btnLWA_gold_68x72.png in Resources */,
 				936C7D61172691FD0067524F /* btnLWA_Gold_94x96.png in Resources */,
@@ -250,7 +310,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				936DE03016DF69B400D586D0 /* main.m in Sources */,
+				121F1C62261D8BFC0004DB58 /* YYClassInfo.m in Sources */,
+				121F1C61261D8BFC0004DB58 /* NSObject+YYModel.m in Sources */,
 				936DE03416DF69B400D586D0 /* AMZNAppDelegate.m in Sources */,
+				121F1C30261C52270004DB58 /* TYImageAESCoder.m in Sources */,
+				129359752609E883007508DC /* RecordTool.m in Sources */,
+				121F1C36261C57A30004DB58 /* TYAVSDataUtil.m in Sources */,
+				124C27862613134200159276 /* TYAVSUploader.m in Sources */,
 				125354C52609DC16006EDE29 /* AudioManager.m in Sources */,
 				93E3471217181CA800A9F478 /* AMZNLoginController.m in Sources */,
 				125354C92609DC3E006EDE29 /* AlexaClient.m in Sources */,
@@ -367,6 +433,8 @@
 		936DE04116DF69B400D586D0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_OBJC_REPEATED_USE_OF_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = LoginWithAmazonSample/LoginWithAmazonSample.entitlements;
 				DEVELOPMENT_TEAM = R4S6AAJC3P;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -393,6 +461,8 @@
 		936DE04216DF69B400D586D0 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_OBJC_REPEATED_USE_OF_WEAK = YES;
 				CODE_SIGN_ENTITLEMENTS = LoginWithAmazonSample/LoginWithAmazonSample.entitlements;
 				DEVELOPMENT_TEAM = R4S6AAJC3P;
 				FRAMEWORK_SEARCH_PATHS = (

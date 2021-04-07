@@ -12,15 +12,17 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-
+#import "TYAVSUploader.h"
 NS_ASSUME_NONNULL_BEGIN
 
-@interface AMZNLoginController : UIViewController
+@interface AMZNLoginController : UIViewController<TYAVSUploaderDelegate>
 
 @property (strong, nonatomic) IBOutlet UIButton *loginButton;
 @property (strong, nonatomic) IBOutlet UITextView *infoField;
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *logoutButton;
 @property (strong, nonatomic) IBOutlet UINavigationItem *navigationItem;
+
+@property (nonatomic,strong) NSMutableData *mdata;
 
 @property(retain) NSDictionary* userProfile;
 

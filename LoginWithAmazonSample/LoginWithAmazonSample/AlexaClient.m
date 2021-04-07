@@ -248,4 +248,18 @@ static id client;
     }] resume] ;
 }
 
+-(void)aa{
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:kEventsURL]];
+    request.HTTPMethod = @"POST";
+    [request setValue:@"multipart/form-data; boundary=BOUNDARY_TERM_HERE" forHTTPHeaderField:@"Content-Type"];
+    [request setValue:[NSString stringWithFormat:@"Bearer %@", _authorization.token] forHTTPHeaderField:@"Authorization"];
+    NSURLSessionUploadTask*task = [_session uploadTaskWithStreamedRequest:request];
+
+}
+
+
+- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
+ needNewBodyStream:(void (^)(NSInputStream * _Nullable bodyStream))completionHandler{
+    completionHandler(nil);
+}
 @end

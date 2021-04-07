@@ -15,48 +15,84 @@
 #import "AMZNLoginController.h"
 #import "AlexaClient.h"
 #import "AudioManager.h"
+#import "RecordTool.h"
+#import <AVFoundation/AVFoundation.h>
+//[avsDataModel.directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+//    NSLog(@"指令：%@,payload：%@",obj.name,obj.payload);
+//}];
+
+@interface A : NSObject
+
+@property (nonatomic,assign) int i;
+
+@end
+
+@implementation A
+
+@end
 
 @implementation AMZNLoginController
+{
+    TYAVSUploader *uploader;
+}
 
 @synthesize userProfile, navigationItem, logoutButton, loginButton, infoField;
 
 NSString* userLoggedOutMessage = @"Welcome to Login with Amazon!\nIf this is your first time logging in, you will be asked to give permission for this application to access your profile data.";
 NSString* userLoggedInMessage = @"Welcome, %@ \n Your email is %@.";
 BOOL isUserSignedIn;
+-(NSMutableData *)mdata{
+    if (!_mdata) {
+        _mdata = [NSMutableData new];
+    }
+    return _mdata;
+}
 - (IBAction)btntap:(id)sender {
-    BOOL isRecording = [[AudioManager shareManager] isRecording];
+   
+  //  [[TYAVSUploader shareInstance] appendData:nil devId:@"1"];
+    
+    BOOL isRecording = [[RecordTool shared] isRecording];
     if (isRecording) {
         [self.btn2 setTitle:@"开始录音" forState:0];
-        [[AudioManager shareManager] recordStop];
+        [[RecordTool shared] stopRecording];
+       // [[TYAVSUploader shareInstance] appendData:self.mdata devId:@"1"];
     }else{
         [self.btn2 setTitle:@"录音中。。" forState:0];
-        [[AudioManager shareManager]  recordStartWithProcess:^(float peakPower) {
-            
-        } failed:^(NSError *error) {
-            
-        } completed:^(NSData *data) {
-            [AlexaClient.shareClient speechRecognize:data withCompleteHandler:^(NSArray * _Nullable directives, NSError * _Nullable error) {
-                if (error) {
-                    [self showAlertTitle:@""
-                                 message:[NSString stringWithFormat:@"failed: %@", error.userInfo[NSLocalizedDescriptionKey]]
-                                btnTitle:@"OK"];
-                } else if (directives) {
-                    [directives enumerateObjectsUsingBlock:^(NSDictionary * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                        NSLog(@"____%@",obj);
-                        if ([obj[@"type"] isEqualToString:kContentTypeAudio]) {
-//                            self.speaker.hidden = false;
-                            [AudioManager.shareManager playAudioData:obj[@"content"] completionHandler:^(BOOL successfully) {
-                               
-                            }];
-                            return;
-                        } else {
-                          //  self.directivesTextView.text = [self.directivesTextView.text stringByAppendingString:obj.description];
-                            NSLog(@"%@",obj.description);
-                        }
-                    }];
-                }
-            }];
+     
+        [uploader setupConversation];
+        
+        [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable data) {
+            [uploader appendData:data];
+//            [self.mdata appendData:data];
         }];
+//        [[AudioManager shareManager]  recordStartWithProcess:^(float peakPower) {
+//
+//        } failed:^(NSError *error) {
+//
+//        } completed:^(NSData *data) {
+//              [[TYAVSUploader shareInstance] appendData:data devId:@"1"];
+////            [AlexaClient.shareClient speechRecognize:data withCompleteHandler:^(NSArray * _Nullable directives, NSError * _Nullable error) {
+////                if (error) {
+////                    [self showAlertTitle:@""
+////                                 message:[NSString stringWithFormat:@"failed: %@", error.userInfo[NSLocalizedDescriptionKey]]
+////                                btnTitle:@"OK"];
+////                } else if (directives) {
+////                    [directives enumerateObjectsUsingBlock:^(NSDictionary * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+////                        NSLog(@"____%@",obj);
+////                        if ([obj[@"type"] isEqualToString:kContentTypeAudio]) {
+//////                            self.speaker.hidden = false;
+////                            [AudioManager.shareManager playAudioData:obj[@"content"] completionHandler:^(BOOL successfully) {
+////
+////                            }];
+////                            return;
+////                        } else {
+////                          //  self.directivesTextView.text = [self.directivesTextView.text stringByAppendingString:obj.description];
+////                            NSLog(@"%@",obj.description);
+////                        }
+////                    }];
+////                }
+////            }];
+//        }];
     }
 }
 
@@ -142,11 +178,16 @@ BOOL isUserSignedIn;
 }
 
 - (void)loadSignedInUser {
+    if (!isUserSignedIn) {
+        uploader = [[TYAVSUploader alloc]initWithDevId:@"" token:AlexaClient.shareClient.authorization.token];
+        uploader.delegate = self;
+    }
     isUserSignedIn = true;
     self.loginButton.hidden = true;
     self.navigationItem.rightBarButtonItem = self.logoutButton;
     self.infoField.text = [NSString stringWithFormat:@"Welcome, %@ \n Your email is %@.", [userProfile objectForKey:@"name"], [userProfile objectForKey:@"email"]];
     self.infoField.hidden = false;
+
 }
 
 - (void)showLogInPage {
@@ -178,5 +219,28 @@ BOOL isUserSignedIn;
 - (void)dealloc {
     [_btn2 release];
     [super dealloc];
+}
+
+
+-(void)avsUploader:(TYAVSUploader *)avsUploader speechData:(NSData *)speechData{
+    [AudioManager.shareManager playAudioData:speechData completionHandler:^(BOOL successfully) {
+        
+    }];
+}
+
+-(void)avsUploader:(TYAVSUploader *)avsUploader directives:(NSArray<TYAVSDirectivesModel *>*)directives{
+    [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSLog(@"指令：%@,payload：%@",obj.name,obj.payload);
+        if ([obj.name isEqualToString:@"StopCapture"]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.btn2 setTitle:@"开始录音" forState:0];
+                [[RecordTool shared] stopRecording];
+            });
+        }
+    }];
+}
+
+-(void)avsUploader:(TYAVSUploader *)avsUploader error:(NSError *)error{
+    
 }
 @end
