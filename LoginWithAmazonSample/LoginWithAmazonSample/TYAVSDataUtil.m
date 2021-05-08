@@ -12,6 +12,13 @@
 #define kContentTypeJSON @"application/json"
 #define kContentTypeAudio @"application/octet-stream"
 
+#define kPCM @"AUDIO_L16_RATE_16000_CHANNELS_1"
+#define kOPUS @"OPUS"
+
+@interface TYAVSDirectivesModel()
+@property (nonatomic, strong) NSArray *speakParseArr;//{begin: end: content}
+@end
+
 @implementation TYAVSDirectivesModel
 -(NSString *)Namespace{
     return _header[@"namespace"];
@@ -25,6 +32,112 @@
 -(NSString *)dialogRequestId{
     return _header[@"dialogRequestId"];
 }
+
+-(CGFloat)expectSpeech_timeoutInMilliseconds{
+    NSAssert([self.name isEqualToString:TYAVSDirectiveTypeExpectSpeech], @"Expected Speech timeout time that exists only in ExpectSpeech directive");
+    NSNumber *timeoutInMilliseconds = _payload[@"timeoutInMilliseconds"];
+    if (![timeoutInMilliseconds isKindOfClass:[NSNumber class]]) {
+        return 0.0;
+    }
+    
+    if (![timeoutInMilliseconds isKindOfClass:[NSNumber class]]) {
+        NSAssert1(0, @"expectSpeech_initiator type should be NSNumber! %@", timeoutInMilliseconds);
+        return 0.0;
+    }
+    return timeoutInMilliseconds.floatValue;
+}
+
+-(NSDictionary *)expectSpeech_initiator{
+    NSAssert([self.name isEqualToString:TYAVSDirectiveTypeExpectSpeech], @"Initiator that exists only in ExpectSpeech directive");
+    NSDictionary *initiator = _payload[@"initiator"];
+    if (!initiator) {
+        return nil;
+    }
+    
+    if (![initiator isKindOfClass:[NSDictionary class]]) {
+        NSAssert1(0, @"expectSpeech_initiator type should be NSDictionary! %@", initiator);
+        return nil;
+    }
+    return initiator;
+}
+
+-(NSString *)speak_content{
+    if (!self.speakParseArr) {
+        [self parseWEBVTT];
+    }
+    NSString *speak_content = @"";
+    for (NSDictionary* item in self.speakParseArr) {
+        NSString *content = item[@"content"];
+        if (content) {
+            speak_content = [NSString stringWithFormat:@"%@%@",speak_content,content];
+        }
+    }
+    
+    return speak_content;
+}
+
+-(CGFloat)speak_duration{
+    if (!self.speakParseArr) {
+        [self parseWEBVTT];
+    }
+    NSDictionary* dic = self.speakParseArr.lastObject;
+    if (!dic) {
+        return 0.0;
+    }
+    NSString *end = dic[@"end"];
+    if (!end) {
+        return 0.0;
+    }
+    
+    return end.floatValue;
+}
+
+-(void)parseWEBVTT{
+    NSString *webvtt = [self speak_WEBVTT];
+    if (!webvtt) {
+        return;
+    }
+    NSMutableArray *array = [NSMutableArray new];
+    NSString* line_split = @"\n\n";
+    NSString* item_split = @"\n";
+    NSString* item_time_split = @"-->";
+    
+    NSArray<NSString *>* lineArr = [webvtt componentsSeparatedByString:line_split];
+    for (NSString* line in lineArr) {
+        NSArray<NSString *>* itemArr = [line componentsSeparatedByString:item_split];
+        if (itemArr.count != 3) {
+            continue;
+        }
+        NSString *timeString = itemArr[1];
+        NSArray<NSString *>* time_arr = [timeString componentsSeparatedByString:item_time_split];
+        if (time_arr.count !=2) {
+            continue;
+        }
+        NSString *begin = time_arr[0];
+        NSString *end = time_arr[1];
+        NSString *content = itemArr[2];
+        [array addObject:@{@"begin":begin,@"end":end,@"content":content}];
+    }
+    self.speakParseArr = [array copy];
+}
+
+-(NSString *)speak_WEBVTT{
+    NSAssert([self.name isEqualToString:TYAVSDirectiveTypeSpeak], @"Speak_content that exists only in speak directive");
+    NSDictionary *caption = _payload[@"caption"];
+    NSString* content = caption[@"content"];
+    if (!content) {
+        return nil;
+    }
+    if (![content isKindOfClass:[NSString class]]) {
+        NSAssert1(0, @"speak_content type should be NSString! %@", content);
+        return nil;
+    }
+    return content;
+}
+
+@end
+
+@implementation TYAVSUploaderStartSpeechModel
 
 @end
 
@@ -44,25 +157,34 @@
     return mutdata;
 }
 
-+ (NSData *)JSONContent:(NSDictionary *)initiator {
++ (NSData *)JSONContent:(NSDictionary *)initiator startSpeechModel:(TYAVSUploaderStartSpeechModel*)startSpeechModel{
+    NSString *profile = @"NEAR_FIELD";
+    NSString *dialogRequestId = startSpeechModel.dialogId;
+    BOOL isPcm = startSpeechModel.audioFormat == TYAVSAudioFormatPCM_L16_16KHZ_MONO;
+    switch (startSpeechModel.audioProfile) {
+        case TYAVSProfileCLOSE_TALK:
+            profile = @"CLOSE_TALK";
+            break;
+        case TYAVSProfileNEAR_FIELD:
+            profile = @"NEAR_FIELD";
+            break;
+        case TYAVSProfileFAR_FIELD:
+            profile = @"FAR_FIELD";
+            break;
+        default:
+            NSAssert(0, @"profile should be 0-2");
+            break;
+    }
     NSMutableDictionary* contentDic = @{@"context": @[], @"event": @{
                                                 @"header":@{@"namespace": @"SpeechRecognizer",
                                                             @"name":@"Recognize",
                                                             @"messageId": [NSUUID.UUID UUIDString],
-                                                            @"dialogRequestId":@"dialogRequestId-123"},
-                                                @"payload":@{@"profile": @"NEAR_FIELD",@"format": @"AUDIO_L16_RATE_16000_CHANNELS_1"}}}.mutableCopy;
+                                                            @"dialogRequestId":dialogRequestId?:@"dialogRequestId-123"},
+                                                @"payload":@{@"profile": profile,@"format": isPcm?kPCM:kOPUS}}}.mutableCopy;
     if (initiator) {
         [contentDic setObject:initiator forKey:@"initiator"];
     }
-    //@"initiator": @{
-    //                     @"type": @"{{STRING}}",
-    //                     @"payload": @{
-    //                             @"token": @"{{STRING}}"
-    
-    //    NSString *content = @"{\"context\": [], \"event\": {\"header\": {\"namespace\": \"SpeechRecognizer\", \"name\": \"Recognize\", \"messageId\": \"$messageId\", \"dialogRequestId\": \"$dialogRequestId\"}, \"payload\": {\"profile\": \"NEAR_FIELD\", \"format\": \"AUDIO_L16_RATE_16000_CHANNELS_1\"} } }";
-    
-    //    content = [content stringByReplacingOccurrencesOfString:@"$messageId" withString: [NSUUID.UUID UUIDString]];
-    //    content = [content stringByReplacingOccurrencesOfString:@"$dialogRequestId" withString: @"dialogRequestId-123"];
+    NSLog(@"____请求参数:%@",contentDic);
     NSData *contentData = [NSJSONSerialization dataWithJSONObject:contentDic options:0 error:nil];
     NSMutableData *mutdata = [NSMutableData data];
     [mutdata appendData:contentData];
@@ -79,11 +201,12 @@
 }
 
 
-+(NSData *)beginData:(NSDictionary *)initiator{
++(NSData *)beginData:(nullable NSDictionary *)initiator
+    startSpeechModel:(TYAVSUploaderStartSpeechModel*)startSpeechModel{
     NSMutableData *body = [NSMutableData data];
     [body appendData:[@"--BOUNDARY_TERM_HERE\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[self JSONHeaders]];
-    [body appendData:[self JSONContent: initiator]];
+    [body appendData:[self JSONContent: initiator startSpeechModel: startSpeechModel]];
     [body appendData:[@"--BOUNDARY_TERM_HERE\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
     [body appendData:[self binaryAudioHeaders]];
     return body;
@@ -94,10 +217,15 @@
 }
 
 + (NSArray<NSDictionary *> *)splitData:(NSData *)data withBoundary:(NSString *)contentType {
-    NSString *boundary = [[self matchesInString:contentType withRegExpPattern:@"boundary=(.*?);"] objectAtIndex:1];
-    if (!boundary) {
+    if (!contentType) {
         return nil;
     }
+    NSArray *boundaryArr = [self matchesInString:contentType withRegExpPattern:@"boundary=(.*?);"];
+    if(!boundaryArr || boundaryArr.count < 2){
+        return nil;
+    }
+    NSString *boundary = [boundaryArr objectAtIndex:1];
+   
     NSData *head_boundaryData = [[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding];
     NSData *inner_boundaryData = [[NSString stringWithFormat:@"\r\n--%@", boundary] dataUsingEncoding:NSUTF8StringEncoding];
 
@@ -110,7 +238,7 @@
         NSRange head_boundaryRange = [data rangeOfData:head_boundaryData
                                                options:kNilOptions
                                                  range:NSMakeRange(curIdx, data.length-curIdx)];
-        if (head_boundaryRange.length == 0) { break; }
+       // if (head_boundaryRange.length == 0) { break; }
         if (curIdx == 0 && head_boundaryRange.location != 0) {
             curIdx = 0;
         }else{
@@ -126,8 +254,12 @@
         NSRange inner_boundaryRange = [data rangeOfData:inner_boundaryData
                                                 options:kNilOptions
                                                   range:NSMakeRange(curIdx, data.length-curIdx)];
-        if (inner_boundaryRange.length == 0) { break; }
-        NSData *contentData = [data subdataWithRange:NSMakeRange(curIdx, inner_boundaryRange.location-curIdx)];
+        NSData *contentData = nil;
+        if (inner_boundaryRange.length == 0) {
+            contentData = [data subdataWithRange:NSMakeRange(curIdx,data.length-curIdx)];
+        }else{
+            contentData = [data subdataWithRange:NSMakeRange(curIdx, inner_boundaryRange.location-curIdx)];
+        }
         
         [dictArr addObject: @{@"header": headerData, @"content": contentData}];
         
@@ -156,8 +288,10 @@
 
 + (TYAVSDataModel *)parseWithData:(NSData *)data withBoundary:(NSString *)contentType {
     NSMutableArray *directives = [NSMutableArray array];
+    NSMutableArray *speechDatas = [NSMutableArray array];
     NSMutableDictionary *dic = [NSMutableDictionary new];
     [dic setObject:directives forKey:@"directives"];
+    [dic setObject:speechDatas forKey:@"speechDatas"];
     NSArray *dictArr = [self splitData:data withBoundary:contentType];
     for (NSDictionary *dict in dictArr) {
         NSString *header = [[NSString alloc] initWithData:dict[@"header"] encoding:NSUTF8StringEncoding];
@@ -167,7 +301,9 @@
                 [directives addObject:dic[@"directive"]];
             }
         } else if ([header containsString:kContentTypeAudio]) {
-            [dic setObject:dict[@"content"] forKey:@"speechData"];
+            if (dict[@"content"]) {
+                [speechDatas addObject:dict[@"content"]];
+            }
         } else {
             NSLog(@"⚠️Unknown Content-Type: %@", header);
         }
@@ -176,5 +312,33 @@
     
     return [TYAVSDataModel yy_modelWithDictionary:dic];
 }
+#pragma event
++(NSDictionary *)Event_speechStartedWithToken:(NSString *)token{
+  
+    return [self EventWithNamespace:@"SpeechSynthesizer" name:@"SpeechStarted" payload:token?@{@"token":token}:@{}];
+}
 
++(NSDictionary *)Event_speechFinishedWithToken:(NSString *)token{
+    return [self EventWithNamespace:@"SpeechSynthesizer" name:@"SpeechFinished" payload:token?@{@"token":token}:@{}];
+}
+/// @param offsetInMilliseconds 毫秒
++(NSDictionary *)Event_speechInterruptedWithToken:(NSString *)token offsetInMilliseconds:(NSInteger)offsetInMilliseconds{
+   
+    return [self EventWithNamespace:@"SpeechSynthesizer" name:@"SpeechInterrupted" payload:@{@"token":token?:token, @"offsetInMilliseconds":@(offsetInMilliseconds)}];
+}
+
++(NSDictionary*)EventWithNamespace:(NSString *)namespace name:(NSString *)name payload:(NSDictionary *)payload{
+    return @{
+        @"event": @{
+                @"header": @{
+                        @"namespace": namespace,
+                        @"name": name,
+                        @"messageId": [NSUUID.UUID UUIDString],
+                },
+                @"payload":payload?:@{}
+        }
+    };
+}
+    
+  
 @end

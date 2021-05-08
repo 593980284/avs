@@ -6,233 +6,314 @@
 //
 
 #import "TYAVSUploader.h"
-#import "AudioManager.h"
-#import "RecordTool.h"
-static NSString * const kEventsURL2 = @"https://avs-alexa-na.amazon.com/v20160207/events";
-static NSString * const kDirectivesURL2 = @"https://avs-alexa-na.amazon.com/v20160207/directives";
+#import "TYAVSApi.h"
+#import <AVKit/AVKit.h>
+#import "TYAVSUploadStreamManager.h"
+#import "TYAVSAudioPlayer.h"
 
+@interface TYAVSUploader()<NSStreamDelegate>
 
-#define kStreamBufferSize 1024
+@property (nonatomic, strong) NSURLSessionUploadTask *uploadTask;
+@property (nonatomic, strong) NSURLSessionDataTask* downChannelTask;
 
-@interface TYAVSUploader()<NSURLSessionTaskDelegate, NSStreamDelegate>
-@property (nonatomic, strong) NSURLSession *session;
-@property (nonatomic, strong) NSInputStream *bodyStream;
-@property (nonatomic, strong) NSOutputStream *outputStream;
-@property (nonatomic, strong) NSMutableData *formData;
-@property (nonatomic, strong) NSMutableData *reslutData;
-@property (nonatomic, strong) NSData *emptyData;
-@property (nonatomic, assign) BOOL isLs;
 @property (nonatomic, copy) NSString* token;
+@property (nonatomic, copy) NSDictionary *initiator;
+@property (nonatomic, strong)NSDate *initiatorExpiredDate;
+@property (nonatomic, strong) TYAVSUploadStreamManager *uploadStreamManager;
+//要在下行通道可以用情况下，才能语音上传
+@property (nonatomic, assign) BOOL isReady;
+@property (nonatomic, strong) TYAVSAudioPlayer *audioPlayer;
 @end
 
 
 @implementation TYAVSUploader
-{
-    NSInteger byteIndex;
-}
--(instancetype)initWithDevId:(NSString *)devId
-                       token:(NSString *)token{
+
+-(instancetype)initWithDevId:(NSString *)devId{
     if (self = [super init]) {
-        NSURLSessionConfiguration *config = NSURLSessionConfiguration.defaultSessionConfiguration;
-        config.HTTPMaximumConnectionsPerHost = 1;
-        config.timeoutIntervalForRequest = 60.0*60;
-        config.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
-        config.URLCache = nil;
-        _session = [NSURLSession sessionWithConfiguration:config delegate:self delegateQueue:[NSOperationQueue new]];
-        _formData = [NSMutableData new];
-        
-        NSMutableData *empty = [[NSMutableData alloc]initWithCapacity:320];
-        char byte_chars[1] = {'\0'};
-        if (empty.length < 320) {
-            do {
-                [empty appendBytes:byte_chars length:1];
-            } while (empty.length < 320);
-        }
-        _emptyData = empty;
-        
         _devId = devId;
-        _token = token;
-        
-        [self downchannelStream];
+        _state = TYAVSDeviceStateIdle;
+        _uploadStreamManager = [TYAVSUploadStreamManager new];
     }
     return self;
 }
-
+-(void)setAlexaAuthToken:(NSString *)token complete:(void(^)(BOOL success)) complete{
+    if (!token || token.length == 0) {
+        complete(self.isReady);
+        return;
+    }
+    if ([_token isEqualToString:token] && self.isReady) {
+        if (complete) {
+            complete(YES);
+        }
+        return;
+    }
+    _token = token;
+    self.isReady = NO;
+    
+    __block typeof(complete) blockComplete = complete;
+    __weak __typeof__(self) weakSelf = self;
+    [self downChannelStreamWithConnectionComplete:^(BOOL success) {
+        weakSelf.isReady = success;
+        if (blockComplete) {
+            blockComplete(success);
+            blockComplete = nil;
+        }
+    }];
+    [self capabilities];
+}
 
 -(instancetype)init{
     NSAssert(0, @"请使用initWithDevId: token:初始化");
     return nil;
 }
 
--(void)setupConversation{
-    byteIndex = 0;
-    _formData = [NSMutableData new];
-    _reslutData = [NSMutableData new];
-    _isLs = YES;
-    [_formData appendData:[TYAVSDataUtil beginData:nil]];
-    // 创建上传任务
-    NSURL *url = [NSURL URLWithString:kEventsURL2];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"POST";
-    [request setValue:@"multipart/form-data; boundary=BOUNDARY_TERM_HERE" forHTTPHeaderField:@"Content-Type"];
-    [request setValue:[NSString stringWithFormat:@"Bearer %@", _token] forHTTPHeaderField:@"Authorization"];
+#pragma 上传语音
+-(BOOL)startSpeech:(TYAVSUploaderStartSpeechModel*)startSpeechModel{
+    if (self.state == TYAVSDeviceStateListening ||
+        self.state == TYAVSDeviceStateProcessing) {
+        return NO;
+    }
+    if (!self.isReady) {
+        return NO;
+    }
     
-    NSURLSessionUploadTask *uploadTask = [self.session uploadTaskWithStreamedRequest:request];
-    [uploadTask resume];
-    //创建流
-    NSInputStream *inputStream = nil;
-    NSOutputStream *outputStream = nil;
-    [NSStream getBoundStreamsWithBufferSize:kStreamBufferSize inputStream:&inputStream outputStream:&outputStream];
-    self.outputStream = outputStream;
-    self.bodyStream = inputStream;
-    self.outputStream.delegate = self;
-    [self.outputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
-    [self.outputStream open];
+    [self.audioPlayer stop];
+   
+    //添加多次交互需要参数 initiator
+    NSDictionary *initiator = nil;
+    if (self.initiator) {
+        initiator = [self.initiator copy];
+    }
+//    if (self.initiator &&
+//        self.initiatorExpiredDate &&
+//        self.initiatorExpiredDate.timeIntervalSinceNow >=0) {
+//        initiator = [self.initiator copy];
+//    }
+    self.initiator = nil;
+    NSString *dialogRequestId = startSpeechModel.dialogId;
+    _startSpeechModel = startSpeechModel;
+    [_uploadStreamManager beginWithInitiator:initiator startSpeechModel:startSpeechModel];
+    
+    __weak __typeof__(self) weakSelf = self;
+    _uploadTask = [[TYAVSApi share] uploadSpeechWithToken:_token stream:_uploadStreamManager.inputStream
+                                                  success:^(NSHTTPURLResponse * _Nullable response,TYAVSDataModel * _Nonnull dataModel) {
+        [weakSelf handleSpeechData:dataModel.speechDatas directive:dataModel.directives dialogRequestId:dialogRequestId];
+    } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        [weakSelf palyErrorAlexaEarcon];
+        if ([weakSelf.delegate respondsToSelector:@selector(avsUploader:dialogRequestId:error:)]) {
+            [weakSelf.delegate avsUploader:weakSelf dialogRequestId:dialogRequestId error:error];
+        }
+        [weakSelf changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+    }];
+    
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self changeAVSDeviceState:TYAVSDeviceStateListening dialogRequestId:dialogRequestId];
+    });
+    return YES;
     
 }
 
--(void)downchannelStream{
-    
-    NSURL *url = [NSURL URLWithString:kDirectivesURL2];
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url];
-    request.HTTPMethod = @"GET";
-    [request setValue:[NSString stringWithFormat:@"Bearer %@", _token] forHTTPHeaderField:@"Authorization"];
-    NSURLSessionDataTask *downloadTask = [self.session dataTaskWithRequest:request];
-    [downloadTask resume];
-    
-}
 
-
-
--(void)appendData:(NSData *)data{
-    if (!_isLs) {
-        return;
+-(void)handleSpeechData:(NSArray<NSData *> *)speechDatas directive:(NSArray<TYAVSDirectivesModel*> *)directives dialogRequestId:(NSString *)dialogRequestId{
+    if ([self.delegate respondsToSelector:@selector(avsUploader:speechDatas:)]) {
+        [self.delegate avsUploader:self speechDatas:speechDatas];
     }
-    if ( [data isEqualToData:_emptyData]) {
-        NSLog(@"无数据");
-    }else{
-        [_formData appendData:data];
-    }
+    //发送语音数据
+    if(self.startSpeechModel.playVoice){
+        if (speechDatas.count) {
+            [self play:speechDatas dialogRequestId:dialogRequestId];
   
-}
-
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
- needNewBodyStream:(void (^)(NSInputStream * _Nullable bodyStream))completionHandler{
-    completionHandler(self.bodyStream);
-}
-
-- (void)URLSession:(NSURLSession *)session
-          dataTask:(NSURLSessionDataTask *)dataTask
-didReceiveResponse:(NSURLResponse *)response
- completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
-{
-    completionHandler(NSURLSessionResponseAllow);
-}
-
-
-- (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask
-    didReceiveData:(NSData *)data {
-    
-    NSString* url = [dataTask.originalRequest.URL absoluteString];
-    
-    if ([dataTask isKindOfClass:[NSURLSessionUploadTask class]]) {
-        NSLog(@"NSURLSessionUploadTask");
-        [_reslutData appendData:data];
-    }
-    
-    if ([url isEqualToString:kDirectivesURL2]) {
-        NSHTTPURLResponse *res = (NSHTTPURLResponse *)dataTask.response;
-        NSString *contentType = res.allHeaderFields[@"Content-Type"];
-        TYAVSDataModel* avsDataModel = [TYAVSDataUtil parseWithData:data withBoundary:contentType];
-        [avsDataModel.directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-            if([obj.name isEqualToString:@"StopCapture"]){
-                [_formData appendData:[TYAVSDataUtil endData]];
-                self.isLs = NO;
-                *stop = YES;
+        }else{
+            [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+        }
+       
+    }else{
+        __block NSInteger speak_duration = 0;
+        [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([obj.name isEqualToString:TYAVSDirectiveTypeSpeak]) {
+                speak_duration += obj.speak_duration;
             }
         }];
-        
-        if (avsDataModel.directives.count &&
-            [self.delegate respondsToSelector:@selector(avsUploader:directives:)]) {
-            [self.delegate avsUploader:self directives:avsDataModel.directives];
+        if (speak_duration) {
+            
         }
+        [self handleDirective:directives];
     }
-    
+
+   
 }
 
-- (void)URLSession:(NSURLSession *)session task:(NSURLSessionTask *)task
-didCompleteWithError:(nullable NSError *)error{
-    if (!error && _reslutData.length > 0) {
-        NSHTTPURLResponse *res = (NSHTTPURLResponse *)task.response;
-        NSString *contentType = res.allHeaderFields[@"Content-Type"];
-        TYAVSDataModel* avsDataModel = [TYAVSDataUtil parseWithData:_reslutData withBoundary:contentType];
-        if (avsDataModel.speechData) {
-            if ([self.delegate respondsToSelector:@selector(avsUploader:speechData:)]) {
-                [self.delegate avsUploader:self speechData:avsDataModel.speechData];
-            }
+//处理指令数据
+-(void)handleDirective:(NSArray<TYAVSDirectivesModel*> *)directives{
+   
+    //1.在发送状态
+    [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *dialogRequestId = obj.dialogRequestId;
+        if([obj.name isEqualToString:TYAVSDirectiveTypeStopCapture]) {
+            [self changeAVSDeviceState:TYAVSDeviceStateProcessing dialogRequestId:dialogRequestId];
+            [self.uploadStreamManager end];
+        }else if([obj.name isEqualToString:TYAVSDirectiveTypeExpectSpeech]) {
+            self.initiator = [obj expectSpeech_initiator];
+            self.initiatorExpiredDate = [NSDate dateWithTimeIntervalSinceNow:obj.expectSpeech_timeoutInMilliseconds/1000.0];
         }
-        if (avsDataModel.directives.count &&
-            [self.delegate respondsToSelector:@selector(avsUploader:directives:)]) {
-            [self.delegate avsUploader:self directives:avsDataModel.directives];
-        }
+    }];
+    
+    //2。发送指令
+     if (directives.count &&
+         [self.delegate respondsToSelector:@selector(avsUploader:directives:)]) {
+         [self.delegate avsUploader:self directives:directives];
+     }
+ 
+}
+
+-(void)appendData:(NSData *)data{
+    if (_state != TYAVSDeviceStateListening) {
+        NSLog(@"非Listening状态下，不录入数据");
+        return;
+    }
+    if (!data.length) {
+        NSLog(@"无数据");
     }else{
-        if ([self.delegate respondsToSelector:@selector(avsUploader:error:)]) {
-            [self.delegate avsUploader:self error:error];
+        
+        if (self.startSpeechModel.audioFormat== 0 || self.startSpeechModel.audioFormat == 1){
+           
+        }else if(self.startSpeechModel.audioFormat== 2) {
+            
         }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.uploadStreamManager appendAudioData:data];
+        });
     }
-}
-
-
-- (void)stream:(NSStream *)aStream handleEvent:(NSStreamEvent)eventCode
-{
     
-    switch (eventCode) {
-        case NSStreamEventNone:
-            NSLog(@"NSStreamEventNone");
-            break;
+}
+
+#pragma 建立下行通道
+//建立下行通道，回调连接状态
+-(void)downChannelStreamWithConnectionComplete:(void(^)(BOOL success)) connectionComplete{
+    __weak __typeof__(self) weakSelf = self;
+    [self.downChannelTask cancel];
+    self.downChannelTask = [[TYAVSApi share]  setUpDownChannelWithToken:_token receiveData:^(NSHTTPURLResponse * _Nullable response,TYAVSDataModel * _Nonnull dataModel) {
+        BOOL isReady = response.statusCode == 200 || response.statusCode == 204;
+        if (connectionComplete) {
+            connectionComplete(isReady);
+        }
+        [weakSelf handleDirective:dataModel.directives];
+    } success:^(NSHTTPURLResponse * _Nullable response,TYAVSDataModel * _Nonnull dataModel) {
+        if (connectionComplete) {
+            connectionComplete(NO);//get请求已经结束
+        }
+    } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        if (connectionComplete) {
+            connectionComplete(NO);//get请求已经结束
+        }
+    }];
+}
+
+#pragma 每5分钟ping一下
+-(void)ping{
+    [[TYAVSApi share] pingWithToken:_token success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
+        NSLog(@"ping-%@",dataDic);
+    } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
+    }];
+}
+
+-(void)capabilities{
+    [[TYAVSApi share] capabilitiesWithToken:_token success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
+        NSLog(@"capabilities:%@",dataDic);
+    } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
+    }];
+}
+
+-(void)sendSpeechStartedEvent{
+    [[TYAVSApi share] sendEventWithToken:_token event:[TYAVSDataUtil Event_speechStartedWithToken:_token] success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
             
-        case NSStreamEventOpenCompleted:
-            NSLog(@"NSStreamEventOpenCompleted");
-            break;
+        } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
             
-        case NSStreamEventHasBytesAvailable: {
-            NSLog(@"NSStreamEventHasBytesAvailable");
-        } break;
+    }];
+}
+
+-(void)sendSpeechFinishedEvent{
+    [[TYAVSApi share] sendEventWithToken:_token event:[TYAVSDataUtil Event_speechFinishedWithToken:_token] success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
             
-        case NSStreamEventHasSpaceAvailable: {
-            if (aStream == self.outputStream) {
-                
-                NSUInteger data_len = [_formData length];
-                NSUInteger remain_len = data_len - byteIndex;
-                NSInteger len = MIN(remain_len, kStreamBufferSize);
-                
-                while (len == 0) {
-                    [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate dateWithTimeIntervalSinceNow:0.01]];
-                    data_len = [_formData length];
-                    remain_len = data_len - byteIndex;
-                    len = MIN(remain_len, kStreamBufferSize);
-                }
-                
-                uint8_t *readBytes = (uint8_t *)[_formData mutableBytes];
-                readBytes += byteIndex;
-                uint8_t buf[len];
-                (void)memcpy(buf, readBytes, len);
-                
-                len = [self.outputStream write:(const uint8_t *)buf maxLength:len];
-                
-                byteIndex += len;
-            }
+        } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
             
-        } break;
+    }];
+}
+
+-(void)sendSpeechInterruptedEvent:(NSInteger) offsetInMilliseconds{
+    [[TYAVSApi share] sendEventWithToken:_token event:[TYAVSDataUtil Event_speechInterruptedWithToken:_token offsetInMilliseconds:offsetInMilliseconds] success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
             
-        case NSStreamEventErrorOccurred:
-        case NSStreamEventEndEncountered:
-            [aStream close];
-            aStream.delegate = nil;
-            break;
+        } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
             
-        default:
-            break;
+    }];
+}
+
+
+
+-(void)changeAVSDeviceState:(TYAVSDeviceState)state dialogRequestId:(NSString*)dialogRequestId{
+    if (_state == state) {
+        return;
+    }
+    _state = state;
+    
+    if (_state == TYAVSDeviceStateListening ) {
+        [self palyBeginAlexaEarcon];
+    }
+    if ( _state == TYAVSDeviceStateProcessing) {
+        [self palyEndAlexaEarcon];
+    }
+    if ([self.delegate respondsToSelector:@selector(avsUploader:dialogRequestId:state:)]) {
+        [self.delegate avsUploader:self dialogRequestId:dialogRequestId state:state];
+    }
+    
+}
+
+-(void)dealloc{
+   // [super dealloc];
+    [self.uploadTask cancel];
+    [self.downChannelTask cancel];
+}
+
+-(void)palyBeginAlexaEarcon{
+    if (!self.startSpeechModel.suppressEarcon){
+        [self.audioPlayer palyBeginAlexaEarcon];
     }
 }
+
+-(void)palyEndAlexaEarcon{
+    if (!self.startSpeechModel.suppressEarcon){
+        [self.audioPlayer palyEndAlexaEarcon];
+    }
+}
+
+-(void)palyErrorAlexaEarcon{
+    if (!self.startSpeechModel.suppressEarcon){
+        [self.audioPlayer palyErrorAlexaEarcon];
+    }
+}
+
+-(void)play:(NSArray<NSData *>*)datas dialogRequestId:(NSString *)dialogRequestId{
+    __weak __typeof__(self) weakSelf = self;
+//    [self sendSpeechStartedEvent];
+    [self changeAVSDeviceState:TYAVSDeviceStateSpeaking dialogRequestId:dialogRequestId];
+    [self.audioPlayer playAudioDatas:datas completionHandler:^(BOOL successfully, NSInteger offsetInMilliseconds) {
+        [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+//        if (successfully) {
+//            [weakSelf sendSpeechFinishedEvent];
+//        }else{
+//            [weakSelf sendSpeechInterruptedEvent:offsetInMilliseconds];
+//        }
+    }];
+}
+
+-(TYAVSAudioPlayer *)audioPlayer{
+    if (!_audioPlayer) {
+        _audioPlayer = [TYAVSAudioPlayer new];
+    }
+    return _audioPlayer;
+}
+
 @end

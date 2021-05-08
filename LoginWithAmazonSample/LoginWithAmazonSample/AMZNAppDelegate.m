@@ -20,7 +20,8 @@
 {    
     self.viewController = [[[([UIApplication sharedApplication].delegate).window rootViewController] storyboard] instantiateViewControllerWithIdentifier:@"loginController"];
     
-    self.window.rootViewController = self.viewController;
+    self.window.rootViewController = [[UINavigationController alloc]initWithRootViewController:self.viewController];
+    
     
     [self.viewController checkIsUserSignedIn];
     

@@ -13,6 +13,8 @@
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import "TYAVSUploader.h"
+#import "opusCodec.h"
+#import "TYAVSAudioPlayer.h"
 NS_ASSUME_NONNULL_BEGIN
 
 @interface AMZNLoginController : UIViewController<TYAVSUploaderDelegate>
@@ -22,7 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *logoutButton;
 @property (strong, nonatomic) IBOutlet UINavigationItem *navigationItem;
 
+@property (nonatomic, strong) opusCodec *codes;
+
 @property (nonatomic,strong) NSMutableData *mdata;
+@property (nonatomic,strong) TYAVSAudioPlayer *AVSAudioPlayer;
+
 
 @property(retain) NSDictionary* userProfile;
 
@@ -31,6 +37,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)loadSignedInUser;
 
 - (void)checkIsUserSignedIn;
+
 @property (retain, nonatomic) IBOutlet UIButton *btn2;
 
 @end

@@ -17,6 +17,9 @@
 #import "AudioManager.h"
 #import "RecordTool.h"
 #import <AVFoundation/AVFoundation.h>
+#import <AudioToolbox/AudioToolbox.h>
+#import "TYAVSAudioPlayer.h"
+
 //[avsDataModel.directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
 //    NSLog(@"指令：%@,payload：%@",obj.name,obj.payload);
 //}];
@@ -24,11 +27,26 @@
 @interface A : NSObject
 
 @property (nonatomic,assign) int i;
+@property (nonatomic, strong) opusCodec *codes;
 
 @end
 
 @implementation A
+-(void)aa{
+    self->_i = 3;
+    (*self)._i = 2;
+}
 
+-(instancetype)init{
+    if (self = [super init]) {
+        
+    }
+    return self;
+}
+
+-(void)dealloc{
+    NSLog(@"1111");
+}
 @end
 
 @implementation AMZNLoginController
@@ -47,23 +65,54 @@ BOOL isUserSignedIn;
     }
     return _mdata;
 }
+
+-(opusCodec *)codes{
+    if (!_codes) {
+        _codes = [opusCodec new];
+        [_codes opusInit];
+    }
+    return  _codes;
+}
+
 - (IBAction)btntap:(id)sender {
    
   //  [[TYAVSUploader shareInstance] appendData:nil devId:@"1"];
     
     BOOL isRecording = [[RecordTool shared] isRecording];
+    NSLog(@"%@",self.mdata);
+    
     if (isRecording) {
         [self.btn2 setTitle:@"开始录音" forState:0];
         [[RecordTool shared] stopRecording];
+        
+        //[uploader appendData:self.mdata];
        // [[TYAVSUploader shareInstance] appendData:self.mdata devId:@"1"];
     }else{
         [self.btn2 setTitle:@"录音中。。" forState:0];
-     
-        [uploader setupConversation];
+        self.mdata = [NSMutableData new];
+        TYAVSUploaderStartSpeechModel * startSpeechModel = [TYAVSUploaderStartSpeechModel new];
+        startSpeechModel.dialogId = @"22";
+        startSpeechModel.suppressEarcon = YES;
+        startSpeechModel.playVoice = YES;
+        startSpeechModel.audioFormat = 0;
+        startSpeechModel.audioProfile = 1;
+        [uploader startSpeech:startSpeechModel ];
         
-        [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable data) {
-            [uploader appendData:data];
-//            [self.mdata appendData:data];
+        //__block typeof(uploader) _uploader = uploader;
+//        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//            [[NSBundle mainBundle]pathForResource:@"opus" ofType:nil];
+//            NSData *data = [NSData dataWithContentsOfFile:[[NSBundle mainBundle]pathForResource:@"opus" ofType:nil]];
+//            [uploader appendData:data];
+//            NSLog(@"清楚self");
+//            self->uploader = nil;
+//        });
+        __weak typeof(uploader) _uploader2 = uploader;
+        [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable d) {
+          // NSData * d = [self.codes encodePCMData:data];
+            //d = [self.codes decodeOpusData:d];
+           // NSLog(@"%ld,%ld",d.length, data.length);
+            [self->uploader appendData:d];
+           // [self.mdata appendData:d];
         }];
 //        [[AudioManager shareManager]  recordStartWithProcess:^(float peakPower) {
 //
@@ -179,8 +228,9 @@ BOOL isUserSignedIn;
 
 - (void)loadSignedInUser {
     if (!isUserSignedIn) {
-        uploader = [[TYAVSUploader alloc]initWithDevId:@"" token:AlexaClient.shareClient.authorization.token];
-        uploader.delegate = self;
+        [uploader setAlexaAuthToken:AlexaClient.shareClient.authorization.token complete:^(BOOL success) {
+            NSLog(@"success:%ld",success);
+        }];
     }
     isUserSignedIn = true;
     self.loginButton.hidden = true;
@@ -199,6 +249,45 @@ BOOL isUserSignedIn;
 }
 
 - (void)viewDidLoad {
+  
+   // self.navigationController.navigationBar.translucent = NO;
+    //创建子view
+//    self.AVSAudioPlayer = [TYAVSAudioPlayer new];
+//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//        [self.AVSAudioPlayer palyBeginAlexaEarcon];
+//        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//            [self.AVSAudioPlayer palyEndAlexaEarcon];
+//            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//                [self.AVSAudioPlayer palyErrorAlexaEarcon];
+//            });
+//        });
+//       
+//    });
+   NSDictionary*params = @{
+        @"client_id": @"amzn1.application-oa2-client.f3b87f8bc9434beaac3f40aef6e12692",
+        @"client_secret": @"a00671cfe801df93b97a0d74dc6975dcead87d130248494afd13464fb3415d2d",
+        @"code"  :@"ANjQZXylEUSZAvXOJEJc",
+        @"grant_type" :@"22222222authorization_code",
+        @"redirect_uri": @"https://px1-cn.wgine.com/alexa/lwa/callback/afi.do"
+   };
+    
+    NSString* paramsStr = @"";
+    for (NSString* key in params.allKeys) {
+        NSCharacterSet *encodeUrlSet = [NSCharacterSet URLQueryAllowedCharacterSet];
+        NSString *encodeKey = [self encodeString:key];
+        NSString *encodeValue = [self encodeString:params[key]];
+        if (paramsStr.length) {
+            paramsStr = [NSString stringWithFormat:@"%@&%@=%@",paramsStr,encodeKey,encodeValue];
+        }else{
+            paramsStr = [NSString stringWithFormat:@"%@=%@",encodeKey,encodeValue];
+        }
+    }
+    NSLog(@"%@",paramsStr);
+    
+    uploader = [[TYAVSUploader alloc]initWithDevId:@""];
+     A *aaa = [A new];
+    uploader.delegate = self;
+    
     if (isUserSignedIn)
         [self loadSignedInUser];
     else
@@ -216,31 +305,62 @@ BOOL isUserSignedIn;
     }
 }
 
+
 - (void)dealloc {
     [_btn2 release];
     [super dealloc];
 }
 
 
+-(NSString*)encodeString:(NSString*)unencodedString{
+// CharactersToBeEscaped = @":/?&=;+!@#$()~',*";
+// CharactersToLeaveUnescaped = @"[].";
+NSString *encodedString = (NSString *)CFBridgingRelease(CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault,
+(CFStringRef)unencodedString,
+NULL,
+(CFStringRef)@"!*'();:@&=+$,/?%#[]",
+kCFStringEncodingUTF8));
+return encodedString;
+}
+
+
 -(void)avsUploader:(TYAVSUploader *)avsUploader speechData:(NSData *)speechData{
-    [AudioManager.shareManager playAudioData:speechData completionHandler:^(BOOL successfully) {
-        
-    }];
+    double duration = [[AVAudioPlayer alloc] initWithData:speechData error:nil].duration;
+    NSLog(@"%lf",duration);
+//    [AudioManager.shareManager playAudioData:speechData completionHandler:^(BOOL successfully) {
+//        
+//    }];
 }
 
 -(void)avsUploader:(TYAVSUploader *)avsUploader directives:(NSArray<TYAVSDirectivesModel *>*)directives{
+    
     [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        NSLog(@"指令：%@,payload：%@",obj.name,obj.payload);
-        if ([obj.name isEqualToString:@"StopCapture"]) {
+        if ([obj.name isEqualToString:TYAVSDirectiveTypeSpeak]) {
+            if (obj.speak_content) {
+                NSLog(@"%@",obj.speak_content);
+                //发送文字
+            }
+
+        }else if([obj.name isEqualToString:TYAVSDirectiveTypeStopCapture]) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 [self.btn2 setTitle:@"开始录音" forState:0];
                 [[RecordTool shared] stopRecording];
             });
+        }else if([obj.name isEqualToString:TYAVSDirectiveTypeExpectSpeech]) {
+            
         }
     }];
 }
 
--(void)avsUploader:(TYAVSUploader *)avsUploader error:(NSError *)error{
+
+-(void)avsUploader:(TYAVSUploader *)avsUploader dialogRequestId:(NSString*)dialogRequestId error:(NSError *)error{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.btn2 setTitle:@"开始录音" forState:0];
+        [[RecordTool shared] stopRecording];
+    });
+}
+
+-(void)avsUploader:(TYAVSUploader *)avsUploader dialogRequestId:(NSString*)dialogRequestId state:(TYAVSDeviceState)state{
     
 }
 @end
