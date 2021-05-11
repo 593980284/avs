@@ -18,6 +18,7 @@
     NSInteger byteIndex;
 }
 -(void)beginWithInitiator:(NSDictionary *)initiator startSpeechModel:(TYAVSUploaderStartSpeechModel *)startSpeechModel{
+    NSAssert([NSThread currentThread].isMainThread, @"请在主线程调用");
     byteIndex = 0;
     _outputStreamSpaceAvailable = NO;
     [self.outputStream close];

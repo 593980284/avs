@@ -33,8 +33,23 @@
 
 @implementation A
 -(void)aa{
-    self->_i = 3;
-    (*self)._i = 2;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    int status = 0;
+    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+        self.i =1;
+    do {
+        
+        NSLog(@"111,%ld",self.i);
+        self.i = 2;
+        status = -3;
+        if (status == -3) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                dispatch_semaphore_signal(semaphore);
+            });
+            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        }
+    } while (status == -3);
+    });
 }
 
 -(instancetype)init{
@@ -45,7 +60,7 @@
 }
 
 -(void)dealloc{
-    NSLog(@"1111");
+    NSLog(@"222");
 }
 @end
 
@@ -94,7 +109,7 @@ BOOL isUserSignedIn;
         startSpeechModel.dialogId = @"22";
         startSpeechModel.suppressEarcon = YES;
         startSpeechModel.playVoice = YES;
-        startSpeechModel.audioFormat = 0;
+        startSpeechModel.audioFormat = 1;
         startSpeechModel.audioProfile = 1;
         [uploader startSpeech:startSpeechModel ];
         
@@ -107,11 +122,11 @@ BOOL isUserSignedIn;
 //            self->uploader = nil;
 //        });
         __weak typeof(uploader) _uploader2 = uploader;
-        [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable d) {
-          // NSData * d = [self.codes encodePCMData:data];
-            //d = [self.codes decodeOpusData:d];
-           // NSLog(@"%ld,%ld",d.length, data.length);
-            [self->uploader appendData:d];
+        [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable data) {
+           NSData * d2 = [self.codes encodePCMData:data];
+            NSData *d = [self.codes decodeOpusData:d2];
+            NSLog(@"%ld,%ld,%ld",d.length,d2.length,data.length);
+            [self->uploader appendData:d2];
            // [self.mdata appendData:d];
         }];
 //        [[AudioManager shareManager]  recordStartWithProcess:^(float peakPower) {
@@ -249,43 +264,14 @@ BOOL isUserSignedIn;
 }
 
 - (void)viewDidLoad {
+    
+    double latitude = 30.302710400534167;
+    NSString *lat = [[NSNumber alloc]initWithDouble:latitude].stringValue;
+    NSString *lat2 = [NSString stringWithFormat:@"%f", latitude];
   
-   // self.navigationController.navigationBar.translucent = NO;
-    //创建子view
-//    self.AVSAudioPlayer = [TYAVSAudioPlayer new];
-//    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-//        [self.AVSAudioPlayer palyBeginAlexaEarcon];
-//        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-//            [self.AVSAudioPlayer palyEndAlexaEarcon];
-//            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-//                [self.AVSAudioPlayer palyErrorAlexaEarcon];
-//            });
-//        });
-//       
-//    });
-   NSDictionary*params = @{
-        @"client_id": @"amzn1.application-oa2-client.f3b87f8bc9434beaac3f40aef6e12692",
-        @"client_secret": @"a00671cfe801df93b97a0d74dc6975dcead87d130248494afd13464fb3415d2d",
-        @"code"  :@"ANjQZXylEUSZAvXOJEJc",
-        @"grant_type" :@"22222222authorization_code",
-        @"redirect_uri": @"https://px1-cn.wgine.com/alexa/lwa/callback/afi.do"
-   };
-    
-    NSString* paramsStr = @"";
-    for (NSString* key in params.allKeys) {
-        NSCharacterSet *encodeUrlSet = [NSCharacterSet URLQueryAllowedCharacterSet];
-        NSString *encodeKey = [self encodeString:key];
-        NSString *encodeValue = [self encodeString:params[key]];
-        if (paramsStr.length) {
-            paramsStr = [NSString stringWithFormat:@"%@&%@=%@",paramsStr,encodeKey,encodeValue];
-        }else{
-            paramsStr = [NSString stringWithFormat:@"%@=%@",encodeKey,encodeValue];
-        }
-    }
-    NSLog(@"%@",paramsStr);
-    
+    [[A new] aa];
     uploader = [[TYAVSUploader alloc]initWithDevId:@""];
-     A *aaa = [A new];
+  
     uploader.delegate = self;
     
     if (isUserSignedIn)
@@ -303,6 +289,10 @@ BOOL isUserSignedIn;
             [sub setFrame:tempRect];
         }
     }
+    
+    self.llll = [UILabel new];
+    [self.view addSubview:self.llll];
+    self.llll.frame = CGRectMake(100, 64, 300, 40);
 }
 
 
@@ -361,6 +351,8 @@ return encodedString;
 }
 
 -(void)avsUploader:(TYAVSUploader *)avsUploader dialogRequestId:(NSString*)dialogRequestId state:(TYAVSDeviceState)state{
-    
+    self.llll.text = @[@"空闲",@"监听中",@"识别",@"播放"][state];
 }
+
+
 @end

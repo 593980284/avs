@@ -13,7 +13,7 @@
 
 #define kDefaultSampleRate 16000
 
-#define WB_FRAME_SIZE  640
+#define WB_FRAME_SIZE  320
 
 @implementation opusCodec
 
@@ -22,6 +22,8 @@
 OpusEncoder *enc;
 
 OpusDecoder *dec;
+    
+OpusDecoder *enc16;
 
 unsigned char opus_data_encoder[40];
 
@@ -39,7 +41,7 @@ dec = opus_decoder_create(kDefaultSampleRate, 1, &error);
     
 opus_encoder_ctl(enc, OPUS_SET_VBR(0));
 
-opus_encoder_ctl(enc, OPUS_SET_BITRATE(32000));//比特率
+opus_encoder_ctl(enc, OPUS_SET_BITRATE(16000));//比特率
     
 opus_encoder_ctl(enc,OPUS_SET_APPLICATION(OPUS_APPLICATION_RESTRICTED_LOWDELAY));
 
@@ -51,6 +53,8 @@ opus_encoder_ctl(enc, OPUS_SET_COMPLEXITY(4));//录制质量 1-10
     
 
 opus_encoder_ctl(enc, OPUS_SET_SIGNAL(OPUS_SIGNAL_VOICE));//信号
+    
+//    enc = opus_encoder_create(kDefaultSampleRate, 1, OPUS_APPLICATION_RESTRICTED_LOWDELAY, &error);
 
 }
 
@@ -108,7 +112,7 @@ int pcm_num = opus_decode(dec, cbits, lengthOfBytes, decoded, frame_size, 0);
 
    NSLog(@"解压后长度=%d",pcm_num);
 
-return frame_size;
+return pcm_num;
 
 }
 

@@ -123,7 +123,6 @@
     if(self.startSpeechModel.playVoice){
         if (speechDatas.count) {
             [self play:speechDatas dialogRequestId:dialogRequestId];
-  
         }else{
             [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
         }
@@ -151,8 +150,10 @@
     [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         NSString *dialogRequestId = obj.dialogRequestId;
         if([obj.name isEqualToString:TYAVSDirectiveTypeStopCapture]) {
-            [self changeAVSDeviceState:TYAVSDeviceStateProcessing dialogRequestId:dialogRequestId];
-            [self.uploadStreamManager end];
+            if(self.state == TYAVSDeviceStateListening && self.uploadTask.state == NSURLSessionTaskStateRunning){
+                [self changeAVSDeviceState:TYAVSDeviceStateProcessing dialogRequestId:dialogRequestId];
+                [self.uploadStreamManager end];
+            }
         }else if([obj.name isEqualToString:TYAVSDirectiveTypeExpectSpeech]) {
             self.initiator = [obj expectSpeech_initiator];
             self.initiatorExpiredDate = [NSDate dateWithTimeIntervalSinceNow:obj.expectSpeech_timeoutInMilliseconds/1000.0];
@@ -300,7 +301,7 @@
 //    [self sendSpeechStartedEvent];
     [self changeAVSDeviceState:TYAVSDeviceStateSpeaking dialogRequestId:dialogRequestId];
     [self.audioPlayer playAudioDatas:datas completionHandler:^(BOOL successfully, NSInteger offsetInMilliseconds) {
-        [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+        [weakSelf changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
 //        if (successfully) {
 //            [weakSelf sendSpeechFinishedEvent];
 //        }else{

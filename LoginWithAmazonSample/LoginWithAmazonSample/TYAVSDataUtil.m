@@ -238,10 +238,11 @@
         NSRange head_boundaryRange = [data rangeOfData:head_boundaryData
                                                options:kNilOptions
                                                  range:NSMakeRange(curIdx, data.length-curIdx)];
-       // if (head_boundaryRange.length == 0) { break; }
+    
         if (curIdx == 0 && head_boundaryRange.location != 0) {
             curIdx = 0;
         }else{
+           if (head_boundaryRange.length == 0) { break; }
             curIdx = NSMaxRange(head_boundaryRange);
         }
         NSRange paddingRange = [data rangeOfData:blankLineData
@@ -257,13 +258,16 @@
         NSData *contentData = nil;
         if (inner_boundaryRange.length == 0) {
             contentData = [data subdataWithRange:NSMakeRange(curIdx,data.length-curIdx)];
+            curIdx = data.length;
         }else{
             contentData = [data subdataWithRange:NSMakeRange(curIdx, inner_boundaryRange.location-curIdx)];
+            curIdx = inner_boundaryRange.location;
         }
+        
         
         [dictArr addObject: @{@"header": headerData, @"content": contentData}];
         
-        curIdx = inner_boundaryRange.location;
+       
     }
     
     return dictArr;

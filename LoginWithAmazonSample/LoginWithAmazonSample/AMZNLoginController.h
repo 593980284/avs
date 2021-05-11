@@ -24,6 +24,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (strong, nonatomic) IBOutlet UIBarButtonItem *logoutButton;
 @property (strong, nonatomic) IBOutlet UINavigationItem *navigationItem;
 
+@property (nonatomic,strong) UILabel *llll;
+
 @property (nonatomic, strong) opusCodec *codes;
 
 @property (nonatomic,strong) NSMutableData *mdata;
