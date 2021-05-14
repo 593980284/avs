@@ -19,6 +19,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import <AudioToolbox/AudioToolbox.h>
 #import "TYAVSAudioPlayer.h"
+#import "TYOpusCodec.h"
 
 //[avsDataModel.directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
 //    NSLog(@"指令：%@,payload：%@",obj.name,obj.payload);
@@ -28,6 +29,7 @@
 
 @property (nonatomic,assign) int i;
 @property (nonatomic, strong) opusCodec *codes;
+@property (nonatomic, strong) A *next;
 
 @end
 
@@ -67,6 +69,8 @@
 @implementation AMZNLoginController
 {
     TYAVSUploader *uploader;
+    TYOpusCodec* OpusCodec16;
+    TYOpusCodec* OpusCodec32;
 }
 
 @synthesize userProfile, navigationItem, logoutButton, loginButton, infoField;
@@ -122,12 +126,19 @@ BOOL isUserSignedIn;
 //            self->uploader = nil;
 //        });
         __weak typeof(uploader) _uploader2 = uploader;
+        self.mdata = [NSMutableData new];
+        if(!OpusCodec16){
+            OpusCodec16 = [TYOpusCodec avsOpusCodec_16bitRate];
+            OpusCodec32 = [TYOpusCodec avsOpusCodec_32bitRate];
+        }
         [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable data) {
-           NSData * d2 = [self.codes encodePCMData:data];
-            NSData *d = [self.codes decodeOpusData:d2];
-            NSLog(@"%ld,%ld,%ld",d.length,d2.length,data.length);
-            [self->uploader appendData:d2];
-           // [self.mdata appendData:d];
+        NSData* opus16 =  [OpusCodec16 encodeMonoPCMData:data];
+        NSData* pcm =  [OpusCodec32 decodeOpusData:opus16 pcmDataFrameSize:640];
+        NSData *opus32 = [OpusCodec32 encodeMonoPCMData:pcm];
+         
+          NSLog(@"%ld,%ld,%ld",opus16.length,pcm.length,opus32.length);
+            [self->uploader appendData:opus32];
+            [self.mdata appendData:opus32];
         }];
 //        [[AudioManager shareManager]  recordStartWithProcess:^(float peakPower) {
 //
@@ -267,9 +278,10 @@ BOOL isUserSignedIn;
     
     double latitude = 30.302710400534167;
     NSString *lat = [[NSNumber alloc]initWithDouble:latitude].stringValue;
-    NSString *lat2 = [NSString stringWithFormat:@"%f", latitude];
+    NSString *lat2 = [NSString stringWithFormat:@"%.10f", latitude];
+    NSString *lat3 = [NSString stringWithFormat:@"%g", latitude];
   
-    [[A new] aa];
+   // [[A new] aa];
     uploader = [[TYAVSUploader alloc]initWithDevId:@""];
   
     uploader.delegate = self;
@@ -293,6 +305,14 @@ BOOL isUserSignedIn;
     self.llll = [UILabel new];
     [self.view addSubview:self.llll];
     self.llll.frame = CGRectMake(100, 64, 300, 40);
+    
+    self.llll2 = [UILabel new];
+    self.llll2.font = [UIFont systemFontOfSize:12];
+    self.llll2.numberOfLines = 0;
+    [self.view addSubview:self.llll2];
+    self.llll2.frame = CGRectMake(100, 64+50, 200, 100);
+    
+    
 }
 
 
@@ -328,6 +348,7 @@ return encodedString;
         if ([obj.name isEqualToString:TYAVSDirectiveTypeSpeak]) {
             if (obj.speak_content) {
                 NSLog(@"%@",obj.speak_content);
+                self.llll2.text = obj.speak_content;
                 //发送文字
             }
 
@@ -352,6 +373,9 @@ return encodedString;
 
 -(void)avsUploader:(TYAVSUploader *)avsUploader dialogRequestId:(NSString*)dialogRequestId state:(TYAVSDeviceState)state{
     self.llll.text = @[@"空闲",@"监听中",@"识别",@"播放"][state];
+    if (state != 3) {
+        self.llll2.text = @"";
+    }
 }
 
 

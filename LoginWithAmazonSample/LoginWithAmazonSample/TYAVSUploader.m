@@ -119,7 +119,7 @@
     if ([self.delegate respondsToSelector:@selector(avsUploader:speechDatas:)]) {
         [self.delegate avsUploader:self speechDatas:speechDatas];
     }
-    //发送语音数据
+    //如果是播放声音，就实际播放为speaking状态。如果是发送文字，speaking的持续时间，解析字幕里面的时长
     if(self.startSpeechModel.playVoice){
         if (speechDatas.count) {
             [self play:speechDatas dialogRequestId:dialogRequestId];
@@ -135,10 +135,15 @@
             }
         }];
         if (speak_duration) {
-            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(speak_duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+            });
+        }else{
+            [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
         }
-        [self handleDirective:directives];
     }
+    
+    [self handleDirective:directives];
 
    
 }

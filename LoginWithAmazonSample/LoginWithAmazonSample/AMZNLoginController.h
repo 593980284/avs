@@ -26,6 +26,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic,strong) UILabel *llll;
 
+@property (nonatomic,strong) UILabel *llll2;
 @property (nonatomic, strong) opusCodec *codes;
 
 @property (nonatomic,strong) NSMutableData *mdata;

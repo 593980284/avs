@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		1208CD94262D67B1005AA79A /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1208CD93262D67B1005AA79A /* libopus.a */; };
 		1208CDA3262D872F005AA79A /* opus in Resources */ = {isa = PBXBuildFile; fileRef = 1208CDA2262D872F005AA79A /* opus */; };
+		121EC772264BB0B100E5750D /* TYOpusCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 121EC771264BB0B000E5750D /* TYOpusCodec.m */; };
 		121F1C30261C52270004DB58 /* TYImageAESCoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 121F1C2F261C52260004DB58 /* TYImageAESCoder.m */; };
 		121F1C5F261D8BFC0004DB58 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 121F1C57261D8BFB0004DB58 /* LICENSE */; };
 		121F1C60261D8BFC0004DB58 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 121F1C58261D8BFB0004DB58 /* README.md */; };
@@ -64,6 +65,8 @@
 		1208CD91262D67B1005AA79A /* opus_projection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_projection.h; sourceTree = "<group>"; };
 		1208CD93262D67B1005AA79A /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = "<group>"; };
 		1208CDA2262D872F005AA79A /* opus */ = {isa = PBXFileReference; lastKnownFileType = file; path = opus; sourceTree = "<group>"; };
+		121EC770264BB0B000E5750D /* TYOpusCodec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TYOpusCodec.h; sourceTree = "<group>"; };
+		121EC771264BB0B000E5750D /* TYOpusCodec.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TYOpusCodec.m; sourceTree = "<group>"; };
 		121F1C2F261C52260004DB58 /* TYImageAESCoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TYImageAESCoder.m; sourceTree = "<group>"; };
 		121F1C32261C522D0004DB58 /* TYImageAESCoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TYImageAESCoder.h; sourceTree = "<group>"; };
 		121F1C57261D8BFB0004DB58 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
@@ -269,6 +272,8 @@
 				129359742609E882007508DC /* RecordTool.m */,
 				12EBA3D9262D59D700B1117D /* opusCodec.h */,
 				12EBA3DA262D59D700B1117D /* opusCodec.m */,
+				121EC770264BB0B000E5750D /* TYOpusCodec.h */,
+				121EC771264BB0B000E5750D /* TYOpusCodec.m */,
 				125354C72609DC3E006EDE29 /* AlexaClient.h */,
 				125354C82609DC3E006EDE29 /* AlexaClient.m */,
 				124C27842613134200159276 /* TYAVSUploader.h */,
@@ -413,6 +418,7 @@
 				12EBA3DB262D59D700B1117D /* opusCodec.m in Sources */,
 				124C27862613134200159276 /* TYAVSUploader.m in Sources */,
 				124CAAAA263A5A2000169641 /* TYAVSUploadStreamManager.m in Sources */,
+				121EC772264BB0B100E5750D /* TYOpusCodec.m in Sources */,
 				125354C52609DC16006EDE29 /* AudioManager.m in Sources */,
 				124CAA91263A506B00169641 /* TYAVSAudioPlayer.m in Sources */,
 				93E3471217181CA800A9F478 /* AMZNLoginController.m in Sources */,

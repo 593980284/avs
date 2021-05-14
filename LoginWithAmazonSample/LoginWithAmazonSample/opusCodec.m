@@ -45,17 +45,10 @@ opus_encoder_ctl(enc, OPUS_SET_BITRATE(16000));//比特率
     
 opus_encoder_ctl(enc,OPUS_SET_APPLICATION(OPUS_APPLICATION_RESTRICTED_LOWDELAY));
 
-//opus_encoder_ctl(enc, OPUS_SET_BANDWIDTH(OPUS_AUTO));//OPUS_BANDWIDTH_NARROWBAND 宽带窄带
-//
-//opus_encoder_ctl(enc, OPUS_SET_VBR_CONSTRAINT(1));
-//,
 opus_encoder_ctl(enc, OPUS_SET_COMPLEXITY(4));//录制质量 1-10
-    
 
 opus_encoder_ctl(enc, OPUS_SET_SIGNAL(OPUS_SIGNAL_VOICE));//信号
     
-//    enc = opus_encoder_create(kDefaultSampleRate, 1, OPUS_APPLICATION_RESTRICTED_LOWDELAY, &error);
-
 }
 
 - (NSData *)encode:(short *)pcmBuffer length:(NSInteger)lengthOfShorts
@@ -156,6 +149,10 @@ opus_encoder_destroy(enc);
 
 opus_decoder_destroy(dec);
 
+}
+
+-(void)dealloc{
+    [self destroy];
 }
 
 @end
