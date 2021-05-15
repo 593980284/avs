@@ -18,7 +18,6 @@
 		124536B72646763E00DA5710 /* ExternalAccessory.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 124536B62646763D00DA5710 /* ExternalAccessory.framework */; };
 		124C27862613134200159276 /* TYAVSUploader.m in Sources */ = {isa = PBXBuildFile; fileRef = 124C27852613134200159276 /* TYAVSUploader.m */; };
 		124C27892613158700159276 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 124C27882613158700159276 /* AudioToolbox.framework */; };
-		124CAA91263A506B00169641 /* TYAVSAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 124CAA90263A506A00169641 /* TYAVSAudioPlayer.m */; };
 		124CAA94263A544000169641 /* explore_end.ogg in Resources */ = {isa = PBXBuildFile; fileRef = 124CAA93263A544000169641 /* explore_end.ogg */; };
 		124CAA97263A544900169641 /* explore_begin.ogg in Resources */ = {isa = PBXBuildFile; fileRef = 124CAA96263A544900169641 /* explore_begin.ogg */; };
 		124CAA9A263A545000169641 /* error.wav in Resources */ = {isa = PBXBuildFile; fileRef = 124CAA99263A545000169641 /* error.wav */; };
@@ -28,6 +27,7 @@
 		125354C92609DC3E006EDE29 /* AlexaClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 125354C82609DC3E006EDE29 /* AlexaClient.m */; };
 		129359712609E358007508DC /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 129359702609E358007508DC /* AVFoundation.framework */; };
 		129359752609E883007508DC /* RecordTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 129359742609E882007508DC /* RecordTool.m */; };
+		12A11017264FD19900894CE4 /* TYAVSAudioPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 12A11016264FD19900894CE4 /* TYAVSAudioPlayer.m */; };
 		12B52D59261FF7780092AB8D /* TYAVSApi.m in Sources */ = {isa = PBXBuildFile; fileRef = 12B52D58261FF7780092AB8D /* TYAVSApi.m */; };
 		12D382E8263A5C9A0000D396 /* end.wav in Resources */ = {isa = PBXBuildFile; fileRef = 12D382E6263A5C9A0000D396 /* end.wav */; };
 		12D382E9263A5C9A0000D396 /* begin.wav in Resources */ = {isa = PBXBuildFile; fileRef = 12D382E7263A5C9A0000D396 /* begin.wav */; };
@@ -80,8 +80,6 @@
 		124C27842613134200159276 /* TYAVSUploader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TYAVSUploader.h; sourceTree = "<group>"; };
 		124C27852613134200159276 /* TYAVSUploader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TYAVSUploader.m; sourceTree = "<group>"; };
 		124C27882613158700159276 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
-		124CAA8F263A506A00169641 /* TYAVSAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TYAVSAudioPlayer.h; path = ../../../../../../Desktop/TuyaAVSKit/TuyaAVSKit/Classes/TYAVSAudioPlayer.h; sourceTree = "<group>"; };
-		124CAA90263A506A00169641 /* TYAVSAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TYAVSAudioPlayer.m; path = ../../../../../../Desktop/TuyaAVSKit/TuyaAVSKit/Classes/TYAVSAudioPlayer.m; sourceTree = "<group>"; };
 		124CAA93263A544000169641 /* explore_end.ogg */ = {isa = PBXFileReference; lastKnownFileType = file; path = explore_end.ogg; sourceTree = "<group>"; };
 		124CAA96263A544900169641 /* explore_begin.ogg */ = {isa = PBXFileReference; lastKnownFileType = file; path = explore_begin.ogg; sourceTree = "<group>"; };
 		124CAA99263A545000169641 /* error.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = error.wav; sourceTree = "<group>"; };
@@ -96,6 +94,8 @@
 		129359702609E358007508DC /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
 		129359732609E882007508DC /* RecordTool.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RecordTool.h; sourceTree = "<group>"; };
 		129359742609E882007508DC /* RecordTool.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RecordTool.m; sourceTree = "<group>"; };
+		12A11015264FD19900894CE4 /* TYAVSAudioPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TYAVSAudioPlayer.h; sourceTree = "<group>"; };
+		12A11016264FD19900894CE4 /* TYAVSAudioPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TYAVSAudioPlayer.m; sourceTree = "<group>"; };
 		12B52D57261FF7780092AB8D /* TYAVSApi.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TYAVSApi.h; sourceTree = "<group>"; };
 		12B52D58261FF7780092AB8D /* TYAVSApi.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TYAVSApi.m; sourceTree = "<group>"; };
 		12D382E6263A5C9A0000D396 /* end.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = end.wav; sourceTree = "<group>"; };
@@ -268,6 +268,8 @@
 				12D382E7263A5C9A0000D396 /* begin.wav */,
 				12D382E6263A5C9A0000D396 /* end.wav */,
 				124CAA99263A545000169641 /* error.wav */,
+				12A11015264FD19900894CE4 /* TYAVSAudioPlayer.h */,
+				12A11016264FD19900894CE4 /* TYAVSAudioPlayer.m */,
 				129359732609E882007508DC /* RecordTool.h */,
 				129359742609E882007508DC /* RecordTool.m */,
 				12EBA3D9262D59D700B1117D /* opusCodec.h */,
@@ -282,8 +284,6 @@
 				124CAAA8263A5A2000169641 /* TYAVSUploadStreamManager.m */,
 				12B52D57261FF7780092AB8D /* TYAVSApi.h */,
 				12B52D58261FF7780092AB8D /* TYAVSApi.m */,
-				124CAA8F263A506A00169641 /* TYAVSAudioPlayer.h */,
-				124CAA90263A506A00169641 /* TYAVSAudioPlayer.m */,
 				93E3471017181CA800A9F478 /* AMZNLoginController.h */,
 				93E3471117181CA800A9F478 /* AMZNLoginController.m */,
 				936DE03516DF69B400D586D0 /* MainStoryboard_iPhone.storyboard */,
@@ -411,6 +411,7 @@
 				936DE03016DF69B400D586D0 /* main.m in Sources */,
 				124CAAA5263A594F00169641 /* TYAVSDataUtil.m in Sources */,
 				121F1C62261D8BFC0004DB58 /* YYClassInfo.m in Sources */,
+				12A11017264FD19900894CE4 /* TYAVSAudioPlayer.m in Sources */,
 				121F1C61261D8BFC0004DB58 /* NSObject+YYModel.m in Sources */,
 				936DE03416DF69B400D586D0 /* AMZNAppDelegate.m in Sources */,
 				121F1C30261C52270004DB58 /* TYImageAESCoder.m in Sources */,
@@ -420,7 +421,6 @@
 				124CAAAA263A5A2000169641 /* TYAVSUploadStreamManager.m in Sources */,
 				121EC772264BB0B100E5750D /* TYOpusCodec.m in Sources */,
 				125354C52609DC16006EDE29 /* AudioManager.m in Sources */,
-				124CAA91263A506B00169641 /* TYAVSAudioPlayer.m in Sources */,
 				93E3471217181CA800A9F478 /* AMZNLoginController.m in Sources */,
 				12B52D59261FF7780092AB8D /* TYAVSApi.m in Sources */,
 				125354C92609DC3E006EDE29 /* AlexaClient.m in Sources */,

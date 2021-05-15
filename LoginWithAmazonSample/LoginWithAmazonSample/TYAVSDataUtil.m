@@ -88,8 +88,10 @@
     if (!end) {
         return 0.0;
     }
-    
-    return end.floatValue;
+    NSArray*times = [end componentsSeparatedByString:@":"];
+    NSString*min = times[0];
+    NSString*s = times[1];
+    return min.intValue*60+s.floatValue;
 }
 
 -(void)parseWEBVTT{
