@@ -34,28 +34,19 @@
 @end
 
 @implementation A
--(void)aa{
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    int status = 0;
-    dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-        self.i =1;
-    do {
-        
-        NSLog(@"111,%ld",self.i);
-        self.i = 2;
-        status = -3;
-        if (status == -3) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                dispatch_semaphore_signal(semaphore);
-            });
-            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-        }
-    } while (status == -3);
-    });
-}
+
 
 -(instancetype)init{
     if (self = [super init]) {
+//        __weak __typeof__(self) weakSelf = self;
+//        NSTimer *timr = [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer * _Nonnull timer) {
+//            NSLog(@"__1");
+//
+//        }];
+//
+//        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+//            [timr invalidate];
+//        });
         
     }
     return self;
@@ -281,7 +272,7 @@ BOOL isUserSignedIn;
     NSString *lat2 = [NSString stringWithFormat:@"%.10f", latitude];
     NSString *lat3 = [NSString stringWithFormat:@"%g", latitude];
   
-   // [[A new] aa];
+   [A new];
     uploader = [[TYAVSUploader alloc]initWithDevId:@""];
   
     uploader.delegate = self;
@@ -372,7 +363,11 @@ return encodedString;
 }
 
 -(void)avsUploader:(TYAVSUploader *)avsUploader dialogRequestId:(NSString*)dialogRequestId state:(TYAVSDeviceState)state{
-    self.llll.text = @[@"空闲",@"监听中",@"识别",@"播放"][state];
+    if (state == TYAVSDeviceStateExpect) {
+        self.llll.text = @"期待";
+    }else{
+        self.llll.text = @[@"空闲",@"监听中",@"识别",@"播放"][state];
+    }
     if (state != 3) {
         self.llll2.text = @"";
     }

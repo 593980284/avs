@@ -317,22 +317,28 @@
     return [TYAVSDataModel yy_modelWithDictionary:dic];
 }
 #pragma event
-+(NSDictionary *)Event_speechStartedWithToken:(NSString *)token{
++(NSData *)Event_speechStartedWithToken:(NSString *)token{
   
-    return [self EventWithNamespace:@"SpeechSynthesizer" name:@"SpeechStarted" payload:token?@{@"token":token}:@{}];
+    return [self EventWithNamespace:TYAVSDirectiveNamespaceSpeechSynthesizer name:@"SpeechStarted" payload:token?@{@"token":token}:@{}];
 }
 
-+(NSDictionary *)Event_speechFinishedWithToken:(NSString *)token{
-    return [self EventWithNamespace:@"SpeechSynthesizer" name:@"SpeechFinished" payload:token?@{@"token":token}:@{}];
++(NSData *)Event_speechFinishedWithToken:(NSString *)token{
+    return [self EventWithNamespace:TYAVSDirectiveNamespaceSpeechSynthesizer name:@"SpeechFinished" payload:token?@{@"token":token}:@{}];
 }
 /// @param offsetInMilliseconds 毫秒
-+(NSDictionary *)Event_speechInterruptedWithToken:(NSString *)token offsetInMilliseconds:(NSInteger)offsetInMilliseconds{
++(NSData *)Event_speechInterruptedWithToken:(NSString *)token offsetInMilliseconds:(NSInteger)offsetInMilliseconds{
    
-    return [self EventWithNamespace:@"SpeechSynthesizer" name:@"SpeechInterrupted" payload:@{@"token":token?:token, @"offsetInMilliseconds":@(offsetInMilliseconds)}];
+    return [self EventWithNamespace:TYAVSDirectiveNamespaceSpeechSynthesizer name:@"SpeechInterrupted" payload:@{@"token":token?:token, @"offsetInMilliseconds":@(offsetInMilliseconds)}];
 }
 
-+(NSDictionary*)EventWithNamespace:(NSString *)namespace name:(NSString *)name payload:(NSDictionary *)payload{
-    return @{
++(NSData *)Event_SettingWithPayload:(NSDictionary *)payload{
+   return [self EventWithNamespace:TYAVSDirectiveNamespaceSetting name:TYAVSDirectiveTypeSettingsUpdated payload:payload];
+}
+
+
++(NSData*)EventWithNamespace:(NSString *)namespace name:(NSString *)name payload:(NSDictionary *)payload{
+    NSDictionary *event = @{
+        @"context": @[],
         @"event": @{
                 @"header": @{
                         @"namespace": namespace,
@@ -342,6 +348,13 @@
                 @"payload":payload?:@{}
         }
     };
+    NSMutableData *body = [NSMutableData new];
+    [body appendData:[@"--BOUNDARY_TERM_HERE\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[self JSONHeaders]];
+    [body appendData:[NSJSONSerialization dataWithJSONObject:event options:0 error:nil]];
+    [body appendData:[@"\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+    [body appendData:[@"--BOUNDARY_TERM_HERE\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
+    return [body copy];
 }
     
   

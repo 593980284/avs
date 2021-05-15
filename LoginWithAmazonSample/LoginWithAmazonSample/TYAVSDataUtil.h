@@ -12,7 +12,8 @@ typedef NS_ENUM(NSUInteger, TYAVSDeviceState) {
     TYAVSDeviceStateIdle,
     TYAVSDeviceStateListening,
     TYAVSDeviceStateProcessing,
-    TYAVSDeviceStateSpeaking
+    TYAVSDeviceStateSpeaking,
+    TYAVSDeviceStateExpect = 99
 };
 
 typedef NS_ENUM(NSUInteger, TYAVSProfile) {
@@ -29,10 +30,15 @@ typedef NS_ENUM(NSUInteger, TYAVSAudioFormat) {
     TYAVSAudioFormatMSBC
 };
 
+
+#define TYAVSDirectiveNamespaceSetting @"SettingsUpdated"
+#define TYAVSDirectiveNamespaceSpeechSynthesizer @"SpeechSynthesizer"
+
 #define TYAVSDirectiveTypeSpeak @"Speak"
 #define TYAVSDirectiveTypeExpectSpeech @"ExpectSpeech"
 #define TYAVSDirectiveTypeRecognize @"Recognize"
 #define TYAVSDirectiveTypeStopCapture @"StopCapture"
+#define TYAVSDirectiveTypeSettingsUpdated @"SettingsUpdated"
 
 
 NS_ASSUME_NONNULL_BEGIN
@@ -96,10 +102,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 +(TYAVSDataModel *)parseWithData:(NSData *)data withBoundary:(NSString *)contentType;
 
-+(NSDictionary *)Event_speechStartedWithToken:(NSString *)token;
-+(NSDictionary *)Event_speechFinishedWithToken:(NSString *)token;
++(NSData *)Event_speechStartedWithToken:(NSString *)token;
++(NSData *)Event_speechFinishedWithToken:(NSString *)token;
 /// @param offsetInMilliseconds 毫秒 已经播放了多久
-+(NSDictionary *)Event_speechInterruptedWithToken:(NSString *)token offsetInMilliseconds:(NSInteger)offsetInMilliseconds;
++(NSData *)Event_speechInterruptedWithToken:(NSString *)token offsetInMilliseconds:(NSInteger)offsetInMilliseconds;
++(NSData *)Event_SettingWithPayload:(NSDictionary *)payload;
++(NSData*)EventWithNamespace:(NSString *)Namespace name:(NSString *)name payload:(NSDictionary *)payload;
 @end
 
 NS_ASSUME_NONNULL_END

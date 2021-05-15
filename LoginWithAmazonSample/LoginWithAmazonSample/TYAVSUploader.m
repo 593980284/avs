@@ -10,6 +10,7 @@
 #import <AVKit/AVKit.h>
 #import "TYAVSUploadStreamManager.h"
 #import "TYAVSAudioPlayer.h"
+#import "TYOpusCodec.h"
 
 @interface TYAVSUploader()<NSStreamDelegate>
 
@@ -18,11 +19,15 @@
 
 @property (nonatomic, copy) NSString* token;
 @property (nonatomic, copy) NSDictionary *initiator;
-@property (nonatomic, strong)NSDate *initiatorExpiredDate;
+@property (nonatomic, assign)double expectTimeOutnterval;
 @property (nonatomic, strong) TYAVSUploadStreamManager *uploadStreamManager;
 //要在下行通道可以用情况下，才能语音上传
 @property (nonatomic, assign) BOOL isReady;
 @property (nonatomic, strong) TYAVSAudioPlayer *audioPlayer;
+@property (nonatomic, strong) TYOpusCodec *opusCodec32;
+@property (nonatomic, strong) NSTimer *speakTimer;
+@property (nonatomic, strong) NSTimer *expectTimeOutTimer;
+@property (nonatomic, copy) NSString* speakToken;
 @end
 
 
@@ -76,19 +81,21 @@
     if (!self.isReady) {
         return NO;
     }
+    if (self.state == TYAVSDeviceStateSpeaking) {
+        return NO;
+       // [self stopSpeaking];
+    }
+//
+    if (self.state == TYAVSDeviceStateExpect) {
+        [self.expectTimeOutTimer invalidate];
+    }
     
-    [self.audioPlayer stop];
    
     //添加多次交互需要参数 initiator
     NSDictionary *initiator = nil;
     if (self.initiator) {
         initiator = [self.initiator copy];
     }
-//    if (self.initiator &&
-//        self.initiatorExpiredDate &&
-//        self.initiatorExpiredDate.timeIntervalSinceNow >=0) {
-//        initiator = [self.initiator copy];
-//    }
     self.initiator = nil;
     NSString *dialogRequestId = startSpeechModel.dialogId;
     _startSpeechModel = startSpeechModel;
@@ -114,11 +121,49 @@
     
 }
 
+-(void)stopSpeaking{
+    [self.speakTimer invalidate];
+    [self.audioPlayer stop];
+}
+
+-(void)endSpeakingAndStartExpectWithDialogRequestId:(NSString*)dialogRequestId{
+    if (self.expectTimeOutnterval && self.initiator) {
+        [self changeAVSDeviceState:TYAVSDeviceStateExpect dialogRequestId:dialogRequestId];
+        __weak __typeof__(self) weakSelf = self;
+        self.expectTimeOutTimer = [NSTimer scheduledTimerWithTimeInterval:_expectTimeOutnterval repeats:NO block:^(NSTimer * _Nonnull timer) {
+            [timer invalidate];
+            weakSelf.expectTimeOutnterval = 0;
+            weakSelf.initiator = nil;
+            [weakSelf changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+        }];
+    }else{
+        [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
+    }
+}
+
+-(void)stopExpect{
+    [self.expectTimeOutTimer invalidate];
+}
+
+-(void)startExpect:(double)speak_duration{
+    self.expectTimeOutTimer = [NSTimer scheduledTimerWithTimeInterval:speak_duration repeats:NO block:^(NSTimer * _Nonnull timer) {
+        [timer invalidate];
+    }];
+}
 
 -(void)handleSpeechData:(NSArray<NSData *> *)speechDatas directive:(NSArray<TYAVSDirectivesModel*> *)directives dialogRequestId:(NSString *)dialogRequestId{
     if ([self.delegate respondsToSelector:@selector(avsUploader:speechDatas:)]) {
         [self.delegate avsUploader:self speechDatas:speechDatas];
     }
+    __block NSInteger speak_duration = 0;
+    __weak __typeof__(self) weakSelf = self;
+    [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj.name isEqualToString:TYAVSDirectiveTypeSpeak]) {
+            speak_duration += obj.speak_duration;
+            weakSelf.speakToken = obj.payload[@"token"];
+        }
+    }];
+    
     //如果是播放声音，就实际播放为speaking状态。如果是发送文字，speaking的持续时间，解析字幕里面的时长
     if(self.startSpeechModel.playVoice){
         if (speechDatas.count) {
@@ -128,24 +173,19 @@
         }
        
     }else{
-        __block NSInteger speak_duration = 0;
-        [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-            if ([obj.name isEqualToString:TYAVSDirectiveTypeSpeak]) {
-                speak_duration += obj.speak_duration;
-            }
-        }];
         if (speak_duration) {
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(speak_duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
-            });
+            self.speakTimer = [NSTimer scheduledTimerWithTimeInterval:speak_duration repeats:NO block:^(NSTimer * _Nonnull timer) {
+                [timer invalidate];
+                [weakSelf endSpeakingAndStartExpectWithDialogRequestId:dialogRequestId];;
+                [weakSelf sendSpeechFinishedEvent];
+            }];
+           
         }else{
             [self changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
         }
     }
     
     [self handleDirective:directives];
-
-   
 }
 
 //处理指令数据
@@ -154,14 +194,21 @@
     //1.在发送状态
     [directives enumerateObjectsUsingBlock:^(TYAVSDirectivesModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         NSString *dialogRequestId = obj.dialogRequestId;
-        if([obj.name isEqualToString:TYAVSDirectiveTypeStopCapture]) {
+        NSString *directiveType = obj.name;
+        NSDictionary *payload = obj.payload;
+        if([directiveType isEqualToString:TYAVSDirectiveTypeStopCapture]) {
             if(self.state == TYAVSDeviceStateListening && self.uploadTask.state == NSURLSessionTaskStateRunning){
                 [self changeAVSDeviceState:TYAVSDeviceStateProcessing dialogRequestId:dialogRequestId];
                 [self.uploadStreamManager end];
             }
-        }else if([obj.name isEqualToString:TYAVSDirectiveTypeExpectSpeech]) {
+        }else if([directiveType isEqualToString:TYAVSDirectiveTypeExpectSpeech]) {
             self.initiator = [obj expectSpeech_initiator];
-            self.initiatorExpiredDate = [NSDate dateWithTimeIntervalSinceNow:obj.expectSpeech_timeoutInMilliseconds/1000.0];
+            self.expectTimeOutnterval = obj.expectSpeech_timeoutInMilliseconds/1000.0;
+        }else if([directiveType isEqualToString:TYAVSDirectiveTypeSettingsUpdated]) {
+            if (!payload) {
+                return;
+            }
+            [self sendSettingEvent:payload];
         }
     }];
     
@@ -181,11 +228,31 @@
     if (!data.length) {
         NSLog(@"无数据");
     }else{
-        
+        //pcm 和 20ms 32比特率 opus不用处理，alexa可以直接识别
         if (self.startSpeechModel.audioFormat== 0 || self.startSpeechModel.audioFormat == 1){
            
         }else if(self.startSpeechModel.audioFormat== 2) {
+            int opus16_frame_size = 40;
+            if (data.length%opus16_frame_size != 0) {
+                NSLog(@"非Listening状态下，不录入数据");
+                NSAssert1(0, @"data.length：%ld,数据必须是帧的倍数",data.length);
+                return;
+            }
+            //20ms 16比特率 opus 需要转化为32比特率
+            NSMutableData * opus32Data = [NSMutableData new];
+           
+            NSInteger index = 0;
+            //按帧进行转化
+            while (index < data.length){
+                NSData *opus16FrameData = [data subdataWithRange:NSMakeRange(0, opus16_frame_size)];
+                NSData *pcm = [self.opusCodec32 decodeOpusData:opus16FrameData pcmDataFrameSize:640];
+                NSData *opus32FrameData = [self.opusCodec32 encodeMonoPCMData:pcm];
+                [opus32Data appendData:opus32FrameData];
+                index += opus16_frame_size;
+            };
             
+            data = opus32Data.mutableBytes;
+         
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.uploadStreamManager appendAudioData:data];
@@ -234,26 +301,25 @@
 }
 
 -(void)sendSpeechStartedEvent{
-    [[TYAVSApi share] sendEventWithToken:_token event:[TYAVSDataUtil Event_speechStartedWithToken:_token] success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
-            
-        } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            
-    }];
+    [self sendEvent:[TYAVSDataUtil Event_speechStartedWithToken:_speakToken]];
 }
 
 -(void)sendSpeechFinishedEvent{
-    [[TYAVSApi share] sendEventWithToken:_token event:[TYAVSDataUtil Event_speechFinishedWithToken:_token] success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
-            
-        } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            
-    }];
+    [self sendEvent:[TYAVSDataUtil Event_speechFinishedWithToken:_speakToken]];
+}
+-(void)sendSpeechInterruptedEvent:(NSInteger) offsetInMilliseconds{
+    [self sendEvent:[TYAVSDataUtil Event_speechInterruptedWithToken:_speakToken offsetInMilliseconds:offsetInMilliseconds]];
 }
 
--(void)sendSpeechInterruptedEvent:(NSInteger) offsetInMilliseconds{
-    [[TYAVSApi share] sendEventWithToken:_token event:[TYAVSDataUtil Event_speechInterruptedWithToken:_token offsetInMilliseconds:offsetInMilliseconds] success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
-            
-        } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
-            
+-(void)sendSettingEvent:(NSDictionary *)payload{
+    [self sendEvent:[TYAVSDataUtil Event_SettingWithPayload:payload]];
+}
+
+-(void)sendEvent:(NSData *)event{
+    [[TYAVSApi share] sendEventWithToken:_token event:event success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
+        
+    } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        
     }];
 }
 
@@ -277,11 +343,6 @@
     
 }
 
--(void)dealloc{
-   // [super dealloc];
-    [self.uploadTask cancel];
-    [self.downChannelTask cancel];
-}
 
 -(void)palyBeginAlexaEarcon{
     if (!self.startSpeechModel.suppressEarcon){
@@ -303,15 +364,15 @@
 
 -(void)play:(NSArray<NSData *>*)datas dialogRequestId:(NSString *)dialogRequestId{
     __weak __typeof__(self) weakSelf = self;
-//    [self sendSpeechStartedEvent];
+    [self sendSpeechStartedEvent];
     [self changeAVSDeviceState:TYAVSDeviceStateSpeaking dialogRequestId:dialogRequestId];
     [self.audioPlayer playAudioDatas:datas completionHandler:^(BOOL successfully, NSInteger offsetInMilliseconds) {
-        [weakSelf changeAVSDeviceState:TYAVSDeviceStateIdle dialogRequestId:dialogRequestId];
-//        if (successfully) {
-//            [weakSelf sendSpeechFinishedEvent];
-//        }else{
-//            [weakSelf sendSpeechInterruptedEvent:offsetInMilliseconds];
-//        }
+        [weakSelf endSpeakingAndStartExpectWithDialogRequestId:dialogRequestId];
+        if (successfully) {
+            [weakSelf sendSpeechFinishedEvent];
+        }else{
+            [weakSelf sendSpeechInterruptedEvent:offsetInMilliseconds];
+        }
     }];
 }
 
@@ -320,6 +381,14 @@
         _audioPlayer = [TYAVSAudioPlayer new];
     }
     return _audioPlayer;
+}
+
+
+-(void)dealloc{
+    [self.speakTimer invalidate];
+    [self.expectTimeOutTimer invalidate];
+    [self.uploadTask cancel];
+    [self.downChannelTask cancel];
 }
 
 @end

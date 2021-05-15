@@ -49,7 +49,7 @@ typedef void(^TYAVSDataModelBlock)(NSHTTPURLResponse * _Nullable response, TYAVS
                                        failure:(TYAVSFailureBlock)failureBlock;
 
 -(NSURLSessionDataTask *)sendEventWithToken:(NSString*)token
-                                      event:(NSDictionary*)event
+                                      event:(NSData*)event
                                     success:(TYAVSSuccessBlock)successBlock
                                     failure:(TYAVSFailureBlock)failureBlock;
 

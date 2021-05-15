@@ -125,14 +125,21 @@ static TYAVSApi *_tyAVSApi;
 }
 
 -(NSURLSessionDataTask *)sendEventWithToken:(NSString*)token
-                                  event:(NSDictionary*)event
+                                  event:(NSData*)event
                                success:(TYAVSSuccessBlock)successBlock
                                         failure:(TYAVSFailureBlock)failureBlock{
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:kEventsURL]];
     request.HTTPMethod = @"POST";
-    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+  //  [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [request setValue:@"multipart/form-data; boundary=BOUNDARY_TERM_HERE" forHTTPHeaderField:@"Content-Type"];
     [request setValue:[NSString stringWithFormat:@"Bearer %@", token] forHTTPHeaderField:@"Authorization"];
-    NSURLSessionDataTask *task = [self request:request body:event success:successBlock failure:failureBlock];
+    NSURLSessionDataTask *task = [self.session uploadTaskWithRequest:request fromData:event];
+
+    TYAVSApiDelegate *delegate = [TYAVSApiDelegate new];
+    delegate.failureBlock = failureBlock;
+    delegate.successBlock = successBlock;
+    [self addDelegate:delegate withTask:task];
+    [task resume];
     return task;
 }
 
