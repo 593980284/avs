@@ -36,6 +36,7 @@
         _devId = devId;
         _state = TYAVSDeviceStateIdle;
         _uploadStreamManager = [TYAVSUploadStreamManager new];
+        _opusCodec32 = [TYOpusCodec avsOpusCodec_32bitRate];
     }
     return self;
 }
@@ -88,7 +89,6 @@
         [self.expectTimeOutTimer invalidate];
     }
     
-   
     //添加多次交互需要参数 initiator
     NSDictionary *initiator = nil;
     if (self.initiator) {
@@ -115,6 +115,9 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self changeAVSDeviceState:TYAVSDeviceStateListening dialogRequestId:dialogRequestId];
     });
+    
+    
+  
     return YES;
     
 }
@@ -210,36 +213,46 @@
         NSLog(@"无数据");
     }else{
         //pcm 和 20ms 32比特率 opus不用处理，alexa可以直接识别
-        if (self.startSpeechModel.audioFormat== 0 || self.startSpeechModel.audioFormat == 1){
-           
-        }else if(self.startSpeechModel.audioFormat== 2) {
-            int opus16_frame_size = 40;
-            if (data.length%opus16_frame_size != 0) {
-                NSLog(@"非Listening状态下，不录入数据");
-                NSAssert1(0, @"data.length：%ld,数据必须是帧的倍数",data.length);
-                return;
-            }
-            //20ms 16比特率 opus 需要转化为32比特率
-            NSMutableData * opus32Data = [NSMutableData new];
-           
-            NSInteger index = 0;
-            //按帧进行转化
-            while (index < data.length){
-                NSData *opus16FrameData = [data subdataWithRange:NSMakeRange(0, opus16_frame_size)];
-                NSData *pcm = [self.opusCodec32 decodeOpusData:opus16FrameData pcmDataFrameSize:640];
-                NSData *opus32FrameData = [self.opusCodec32 encodeMonoPCMData:pcm];
-                [opus32Data appendData:opus32FrameData];
-                index += opus16_frame_size;
-            };
+        if (self.startSpeechModel.audioFormat== 0){
             
-            data = opus32Data.mutableBytes;
-         
+        }else if(self.startSpeechModel.audioFormat == 1){
+            
+          //  data = [self coverToOpus32:data frameSize:80];
+            
+        }else if(self.startSpeechModel.audioFormat== 2) {
+            
+            data = [self coverToOpus32:data frameSize:40];
+            
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.uploadStreamManager appendAudioData:data];
         });
     }
     
+}
+
+-(NSData *)coverToOpus32:(NSData *)source frameSize:(NSInteger)frameSize{
+  
+//    if (source.length%frameSize != 0) {
+//        NSAssert1(0, @"data.length：%ld,数据必须是帧的倍数",source.length);
+//        return nil;
+//    }
+    //20ms 16比特率 opus 需要转化为32比特率
+    NSMutableData * opus32Data = [NSMutableData new];
+   
+    NSInteger index = 0;
+    //按帧进行转化
+    while (index < source.length){
+        NSData *frameData = [source subdataWithRange:NSMakeRange(index, frameSize)];
+        NSData *pcm = [self.opusCodec32 decodeOpusData:frameData pcmDataFrameSize:640];
+        if (!pcm) {
+            NSLog(@"解码失败%ld",index);
+        }
+        NSData *opus32FrameData = [self.opusCodec32 encodeMonoPCMData:pcm];
+        [opus32Data appendData:opus32FrameData];
+        index += frameSize;
+    };
+    return opus32Data.copy;
 }
 
 -(void)changeAVSDeviceState:(TYAVSDeviceState)state dialogRequestId:(NSString*)dialogRequestId{
@@ -297,9 +310,9 @@
 
 -(void)sendEvent:(NSData *)event{
     [[TYAVSApi share] sendEventWithToken:_token event:event success:^(NSURLResponse * _Nullable response, NSDictionary * _Nullable dataDic) {
-        
+        NSLog(@"send evnet:%@",[[NSString alloc] initWithData:event encoding:NSUTF8StringEncoding]);
     } failure:^(NSURLResponse * _Nullable response, NSError * _Nullable error) {
-        
+        NSLog(@"send evnet error:%@",[[NSString alloc] initWithData:event encoding:NSUTF8StringEncoding]);
     }];
 }
 

@@ -83,6 +83,52 @@ BOOL isUserSignedIn;
     }
     return  _codes;
 }
+- (IBAction)strbtntap:(id)sender {
+    
+    TYAVSUploaderStartSpeechModel * startSpeechModel = [TYAVSUploaderStartSpeechModel new];
+    startSpeechModel.dialogId = @"22";
+    startSpeechModel.suppressEarcon = YES;
+    startSpeechModel.playVoice = YES;
+    startSpeechModel.audioFormat = 1;
+    startSpeechModel.audioProfile = 1;
+    [uploader startSpeech:startSpeechModel ];
+    
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSString* ss = [self.audioTextView.text stringByReplacingOccurrencesOfString:@" " withString:@""];
+        ss = [ss stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+        ss = [ss stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+        NSData *audata = [self convertHexStrToData:ss];
+//        NSString *soundPath = [[NSBundle mainBundle] pathForResource:@"pcm" ofType:@"raw"];
+//        NSData *audata = [[NSData alloc]initWithContentsOfFile:soundPath];
+        [self->uploader appendData:audata];
+    });
+    
+  
+    
+}
+- (IBAction)strDen:(id)sender {
+    TYAVSUploaderStartSpeechModel * startSpeechModel = [TYAVSUploaderStartSpeechModel new];
+    startSpeechModel.dialogId = @"22";
+    startSpeechModel.suppressEarcon = YES;
+    startSpeechModel.playVoice = YES;
+    startSpeechModel.audioFormat = 1;
+    startSpeechModel.audioProfile = 1;
+    [uploader startSpeech:startSpeechModel];
+    
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSString* ss = [self.audioTextView.text stringByReplacingOccurrencesOfString:@" " withString:@""];
+        ss = [ss stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+        ss = [ss stringByReplacingOccurrencesOfString:@"\r" withString:@""];
+        NSData *audata = [self convertHexStrToData:ss];
+        audata = [self->uploader coverToOpus32:audata frameSize:80];
+//        NSString *soundPath = [[NSBundle mainBundle] pathForResource:@"pcm" ofType:@"raw"];
+//        NSData *audata = [[NSData alloc]initWithContentsOfFile:soundPath];
+        [self->uploader appendData:audata];
+    });
+    
+}
 
 - (IBAction)btntap:(id)sender {
    
@@ -122,12 +168,14 @@ BOOL isUserSignedIn;
             OpusCodec16 = [TYOpusCodec avsOpusCodec_16bitRate];
             OpusCodec32 = [TYOpusCodec avsOpusCodec_32bitRate];
         }
+                
+     
         [[RecordTool shared] startRecordingWithBlock:^(NSData * _Nullable data) {
-        NSData* opus16 =  [OpusCodec16 encodeMonoPCMData:data];
-        NSData* pcm =  [OpusCodec32 decodeOpusData:opus16 pcmDataFrameSize:640];
-        NSData *opus32 = [OpusCodec32 encodeMonoPCMData:pcm];
-         
-          NSLog(@"%ld,%ld,%ld",opus16.length,pcm.length,opus32.length);
+//        NSData* opus16 =  [OpusCodec16 encodeMonoPCMData:data];
+//        NSData* pcm =  [OpusCodec32 decodeOpusData:opus16 pcmDataFrameSize:640];
+        NSData *opus32 = [OpusCodec32 encodeMonoPCMData:data];
+
+          //NSLog(@"%ld,%ld,%ld",opus16.length,pcm.length,opus32.length);
             [self->uploader appendData:opus32];
             [self.mdata appendData:opus32];
         }];
@@ -302,7 +350,38 @@ BOOL isUserSignedIn;
     self.llll2.numberOfLines = 0;
     [self.view addSubview:self.llll2];
     self.llll2.frame = CGRectMake(100, 64+50, 200, 100);
+//    NSString* ID = [[NSUUID UUID] UUIDString];
+//    long long datatemplength = CFSwapInt64BigToHost((uint32_t)ID.hash);  //大小端不一样，需要转化
+//    NSData *idData = [NSData dataWithBytes: &datatemplength length: sizeof(datatemplength)];
+//    NSLog(@"%@",idData);
     
+    self.audioTextView = [UITextView new];
+   
+    NSData *data = [[NSData alloc]initWithContentsOfFile:[NSURL fileURLWithPath: [[NSBundle mainBundle]pathForResource:@"222" ofType:@"txt"]]];
+    [[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding];
+//    self.audioTextView.text = [self convertDataToHexStr:data];
+    self.audioTextView.text =[[NSString alloc]initWithData:data encoding:NSUTF8StringEncoding];
+    self.audioTextView.backgroundColor = [UIColor redColor];
+    self.audioTextView.editable = YES;
+    [self.view addSubview:self.audioTextView];
+    self.audioTextView.frame = CGRectMake(0,100, 50, 100);
+    
+    _thread = [[NSThread alloc] initWithTarget:self selector:@selector(readData) object:nil];
+    _thread.name = @"P2PAlbumReadData";
+    [_thread start];
+    
+//    NSString *ss = @"B8 70 61 D2 ED CE F8 72 72 8C AE 7F F6 5B DE 51 B3 6B 0E 2F 98 CE CD 8D 32 A5 C5 BF 10 44 EB F4 F6 BA 8F EF 7F 11 B5 89 37 C4 BF 87 1C 2E 00 B5 D4 3D 92 E7 BA 5D 68 3F EB E8 B4 C0 3E 84 CF 35 98 89 DB 2F E0 FF AA B3 1C 7E 97 62 2E BB FC F5 ";
+//    ss = [ss stringByReplacingOccurrencesOfString:@" " withString:@""];
+//    NSData *da  = [self convertHexStrToData:ss];
+//
+//    if(!OpusCodec16){
+//        OpusCodec16 = [TYOpusCodec avsOpusCodec_16bitRate];
+//        OpusCodec32 = [TYOpusCodec avsOpusCodec_32bitRate];
+//    }
+//
+//    NSData *pcmData =  [OpusCodec32 decodeOpusData:da pcmDataFrameSize:640];
+//    pcmData= [OpusCodec32 encodeMonoPCMData:pcmData];
+//    NSLog(@"%@",pcmData);
     
 }
 
@@ -310,6 +389,12 @@ BOOL isUserSignedIn;
 - (void)dealloc {
     [_btn2 release];
     [super dealloc];
+}
+
+-(void)readData{
+//    while (1 &&![NSThread currentThread].isCancelled) {
+//        NSLog(@"222222");
+//    }
 }
 
 
@@ -359,6 +444,7 @@ return encodedString;
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.btn2 setTitle:@"开始录音" forState:0];
         [[RecordTool shared] stopRecording];
+        self.llll2.text = [NSString stringWithFormat:@"失败： %@",error];
     });
 }
 
@@ -368,9 +454,58 @@ return encodedString;
     }else{
         self.llll.text = @[@"空闲",@"监听中",@"识别",@"播放"][state];
     }
-    if (state != 3) {
+    if (state != 3 && state != 0) {
         self.llll2.text = @"";
     }
+}
+
+-(NSString *)convertDataToHexStr:(NSData *)data
+{
+    if (!data || [data length] == 0) {
+        return @"";
+    }
+    NSMutableString *string = [[NSMutableString alloc] initWithCapacity:[data length]];
+    
+    [data enumerateByteRangesUsingBlock:^(const void *bytes, NSRange byteRange, BOOL *stop) {
+        unsigned char *dataBytes = (unsigned char*)bytes;
+        for (NSInteger i = 0; i < byteRange.length; i++) {
+            NSString *hexStr = [NSString stringWithFormat:@"%x", (dataBytes[i]) & 0xff];
+            if ([hexStr length] == 2) {
+                [string appendString:hexStr];
+            } else {
+                [string appendFormat:@"0%@", hexStr];
+            }
+        }
+    }];
+    return string;
+}
+
+- (NSData *)convertHexStrToData:(NSString *)str
+{
+    if (!str || [str length] == 0) {
+        return nil;
+    }
+    
+    NSMutableData *hexData = [[NSMutableData alloc] initWithCapacity:20];
+    NSRange range;
+    if ([str length] % 2 == 0) {
+        range = NSMakeRange(0, 2);
+    } else {
+        range = NSMakeRange(0, 1);
+    }
+    for (NSInteger i = range.location; i < [str length]; i += 2) {
+        unsigned int anInt;
+        NSString *hexCharStr = [str substringWithRange:range];
+        NSScanner *scanner = [[NSScanner alloc] initWithString:hexCharStr];
+        
+        [scanner scanHexInt:&anInt];
+        NSData *entity = [[NSData alloc] initWithBytes:&anInt length:1];
+        [hexData appendData:entity];
+        
+        range.location += range.length;
+        range.length = 2;
+    }
+    return hexData;
 }
 
 

@@ -43,6 +43,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(void)appendData:(NSData *)data;
 
+-(NSData *)coverToOpus32:(NSData *)source frameSize:(NSInteger)frameSize;
+
 @end
 
 

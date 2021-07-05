@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1206D9912661EC9000DE488F /* pcm.raw in Resources */ = {isa = PBXBuildFile; fileRef = 1206D9902661EC9000DE488F /* pcm.raw */; };
 		1208CD94262D67B1005AA79A /* libopus.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1208CD93262D67B1005AA79A /* libopus.a */; };
 		1208CDA3262D872F005AA79A /* opus in Resources */ = {isa = PBXBuildFile; fileRef = 1208CDA2262D872F005AA79A /* opus */; };
+		12139DE1265DE46100F4E797 /* 222.txt in Resources */ = {isa = PBXBuildFile; fileRef = 12139DE0265DE46000F4E797 /* 222.txt */; };
 		121EC772264BB0B100E5750D /* TYOpusCodec.m in Sources */ = {isa = PBXBuildFile; fileRef = 121EC771264BB0B000E5750D /* TYOpusCodec.m */; };
 		121F1C30261C52270004DB58 /* TYImageAESCoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 121F1C2F261C52260004DB58 /* TYImageAESCoder.m */; };
 		121F1C5F261D8BFC0004DB58 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = 121F1C57261D8BFB0004DB58 /* LICENSE */; };
@@ -58,6 +60,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1206D9902661EC9000DE488F /* pcm.raw */ = {isa = PBXFileReference; lastKnownFileType = file; path = pcm.raw; sourceTree = "<group>"; };
 		1208CD8D262D67B1005AA79A /* opus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus.h; sourceTree = "<group>"; };
 		1208CD8E262D67B1005AA79A /* opus_multistream.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_multistream.h; sourceTree = "<group>"; };
 		1208CD8F262D67B1005AA79A /* opus_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_types.h; sourceTree = "<group>"; };
@@ -65,6 +68,7 @@
 		1208CD91262D67B1005AA79A /* opus_projection.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = opus_projection.h; sourceTree = "<group>"; };
 		1208CD93262D67B1005AA79A /* libopus.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libopus.a; sourceTree = "<group>"; };
 		1208CDA2262D872F005AA79A /* opus */ = {isa = PBXFileReference; lastKnownFileType = file; path = opus; sourceTree = "<group>"; };
+		12139DE0265DE46000F4E797 /* 222.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = 222.txt; sourceTree = "<group>"; };
 		121EC770264BB0B000E5750D /* TYOpusCodec.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TYOpusCodec.h; sourceTree = "<group>"; };
 		121EC771264BB0B000E5750D /* TYOpusCodec.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TYOpusCodec.m; sourceTree = "<group>"; };
 		121F1C2F261C52260004DB58 /* TYImageAESCoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TYImageAESCoder.m; sourceTree = "<group>"; };
@@ -252,6 +256,8 @@
 			children = (
 				124CAAA3263A594F00169641 /* TYAVSDataUtil.h */,
 				124CAAA4263A594F00169641 /* TYAVSDataUtil.m */,
+				1206D9902661EC9000DE488F /* pcm.raw */,
+				12139DE0265DE46000F4E797 /* 222.txt */,
 				1208CDA2262D872F005AA79A /* opus */,
 				121F1C56261D8BFB0004DB58 /* YYModel */,
 				45C8A9D91DB18D4200DE248C /* LoginWithAmazonSample.entitlements */,
@@ -387,9 +393,11 @@
 				124CAA9A263A545000169641 /* error.wav in Resources */,
 				121F1C60261D8BFC0004DB58 /* README.md in Resources */,
 				936C7D4A17268E0F0067524F /* btnLWA_gold_157x36_pressed.png in Resources */,
+				12139DE1265DE46100F4E797 /* 222.txt in Resources */,
 				936C7D4B17268E0F0067524F /* btnLWA_gold_157x36.png in Resources */,
 				124CAA97263A544900169641 /* explore_begin.ogg in Resources */,
 				936C7D4C17268E0F0067524F /* btnLWA_gold_314x72_pressed.png in Resources */,
+				1206D9912661EC9000DE488F /* pcm.raw in Resources */,
 				121F1C5F261D8BFC0004DB58 /* LICENSE in Resources */,
 				936C7D4D17268E0F0067524F /* btnLWA_gold_314x72.png in Resources */,
 				12D382E8263A5C9A0000D396 /* end.wav in Resources */,

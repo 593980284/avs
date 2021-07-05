@@ -31,6 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic,strong) NSMutableData *mdata;
 @property (nonatomic,strong) TYAVSAudioPlayer *AVSAudioPlayer;
+@property (strong, nonatomic) UITextView *audioTextView;
+@property (nonatomic,strong) NSThread *thread;
 
 
 @property(retain) NSDictionary* userProfile;

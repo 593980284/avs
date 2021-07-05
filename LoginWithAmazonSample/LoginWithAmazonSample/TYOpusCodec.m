@@ -99,6 +99,11 @@
     
     int pcmDataLength = opus_decode(dec, opusData, opusLength, decodeData, shortFrameSize, 0);
     
+    if (pcmDataLength < 0) {
+        NSLog(@"opus_decode解码失败：%d。Number of decoded samples or @ref opus_errorcodes",pcmDataLength);
+        return nil;
+    }
+    
     return [NSData dataWithBytes:decodeData length:pcmDataLength*sizeof(short)];
     
 }
