@@ -7,12 +7,10 @@
 //
 
 #import "TYOpusCodec.h"
-#import "opus.h"
 @implementation TYOpusCodec
 {
     
     OpusEncoder *enc;
-    
     OpusDecoder *dec;
     
 }
@@ -22,15 +20,18 @@
                           bitRate:(int32_t) bitRate
                        complexity:(int32_t) complexity{
     if (self = [super init]) {
+    
         _sampleRate = sampleRate;
         _channels = channels;
         _application = application;
         _bitRate = bitRate;
         _complexity = complexity;
         [self opusInit];
+        
     }
     return self;
 }
+
 
 +(instancetype)avsOpusCodec_16bitRate{
     return [[self alloc]initWithSampleRate:16000 channels:1 application:OPUS_APPLICATION_RESTRICTED_LOWDELAY bitRate:16000 complexity:4];
@@ -76,7 +77,7 @@
     short input_pcm_frame[frame_size];
     opus_int32 max_data_bytes = 2 * frame_size ;//随便设大,此时为原始PCM大小
     memcpy(input_pcm_frame, [data bytes], pcmLen);
-    
+    //随便设置一个较大空间
     unsigned char out_opus_frame[frame_size];
     int outLen = opus_encode(enc, input_pcm_frame, frame_size, out_opus_frame, max_data_bytes);
     
@@ -122,3 +123,4 @@
     [self destroy];
 }
 @end
+
